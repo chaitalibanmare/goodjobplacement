@@ -1,0 +1,120 @@
+/* ===== PAGE ===== */
+.staff-page {
+  padding: 30px;
+  width: 100%;              /* 🔥 FULL WIDTH */
+  box-sizing: border-box;
+}
+
+/* ===== HEADER ===== */
+.staff-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  width: 100%;
+}
+
+.staff-header h2 {
+  margin: 0;
+  font-size: 24px;
+}
+
+.staff-header p {
+  color: #6b7280;
+  font-size: 14px;
+}
+
+/* ===== COUNT ===== */
+.staff-count {
+  background: #f3f4f6;
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-size: 14px;
+}
+
+.staff-count span {
+  color: #6d28d9;
+  font-weight: 700;
+}
+
+/* ===== SEARCH ===== */
+.staff-search {
+  width: 300px;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid #ddd;
+  margin-bottom: 20px;
+}
+
+/* ===== CARD ===== */
+.staff-card {
+  width: 100%;                 /* 🔥 FIX GAP */
+max-width: 100%;
+  background: #fff;
+  border-radius: 16px;
+  padding: 15px;
+  box-shadow: 0 15px 30px rgba(0,0,0,0.5);
+  box-sizing: border-box;
+}
+
+/* ===== TABLE ===== */
+.staff-table {
+  width: 90%;
+  border-collapse: collapse;
+}
+
+/* HEADER */
+.staff-table th {
+  text-align: center;
+  padding: 14px;
+  background: #f3f4f6;
+  font-weight: 600;
+}
+
+/* ROW */
+.staff-table td {
+    text-align: center;
+  padding: 14px;
+  border-bottom: 1px solid #eee;
+}
+
+/* HOVER */
+.staff-table tbody tr:hover {
+  background: #f9fafb;
+}
+
+/* NUMBER COLUMN */
+.staff-table td:first-child {
+  width: 90px;
+}
+/* ===== PAGINATION ===== */
+.staff-pagination {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+  gap: 8px;
+}
+
+.staff-pagination button {
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  background: white;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.staff-pagination button:hover {
+  background: #f3f4f6;
+}
+
+.staff-pagination button.active {
+  background: #6d28d9;
+  color: white;
+  border: none;
+}
+
+.staff-pagination button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

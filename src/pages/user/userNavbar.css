@@ -1,0 +1,163 @@
+/* NAVBAR */
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px 50px;
+
+  /* 🔥 GLASS EFFECT */
+  background: rgba(18, 4, 60, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+
+  color: white;
+
+  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+  border-bottom: 1px solid rgba(255,255,255,0.15);
+
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+/* LOGO */
+.navbar-logo {
+  font-size: 24px;
+  font-weight: 700;
+  color: white;
+}
+
+.navbar-logo span {
+  color: #E0E7FF;
+}
+
+
+.navbar-logo {
+  font-size: 24px;
+  font-weight: 700;
+  color: white;
+  text-decoration: none; /* ✅ IMPORTANT */
+  cursor: pointer;
+}
+
+.navbar-logo span {
+  color: #E0E7FF;
+}
+
+/* LINKS */
+.nav-links {
+  display: flex;
+  gap: 28px;
+}
+
+.nav-links a {
+  text-decoration: none;
+  color: white;
+  font-size: 15px;
+  font-weight: 500;
+  transition: 0.3s;
+}
+
+.nav-links a:hover {
+  opacity: 0.8;
+}
+
+/* RIGHT SIDE */
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  position: relative; /* ✅ IMPORTANT for dropdown */
+}
+
+/* USER BOX */
+.user-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer; /* ✅ clickable */
+  padding: 5px 10px;
+  border-radius: 8px;
+  transition: 0.3s;
+}
+
+.user-box:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* AVATAR */
+.user-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid white;
+}
+
+/* USER NAME */
+.user-name {
+  font-weight: 500;
+  color: white;
+}
+
+/* ❌ REMOVE OLD LOGOUT STYLE */
+/* .logout-text { ... } */
+
+/* ✅ DROPDOWN */
+.user-dropdown {
+  position: absolute;
+  top: 55px;
+  right: 0;
+  background: white;
+  color: #333;
+  border-radius: 10px;
+  padding: 10px 0;
+  width: 160px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+  z-index: 1000;
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+/* DROPDOWN ITEMS */
+.user-dropdown p {
+  margin: 0;
+  padding: 10px 16px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: 0.2s;
+}
+
+.user-dropdown p:hover {
+  background: #f3f4f6;
+  color: #6c3cff;
+}
+
+/* SMALL ANIMATION */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.user-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer; /* ✅ important */
+}
+
+.logout-text {
+  cursor: pointer;
+  color: #E0E7FF;
+  font-size: 14px;
+  transition: 0.3s;
+}
+
+.logout-text:hover {
+  color: white;
+}

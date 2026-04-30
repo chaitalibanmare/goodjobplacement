@@ -1,0 +1,311 @@
+/* ============================= */
+/* 🔹 GLOBAL */
+/* ============================= */
+body, html {
+  overflow-x: hidden;
+  margin: 0;
+  font-family: "Segoe UI", sans-serif;
+}
+
+/* ============================= */
+/* 🔹 LAYOUT */
+/* ============================= */
+.employer-page{
+  display:flex;
+  min-height:100vh;
+  background:#f3f5fb;
+}
+
+/* Sidebar */
+.employer-sidebar{
+  width:250px;
+  background:#081a32;
+  color:#fff;
+  padding:30px 20px;
+  display:flex;
+  flex-direction:column;
+  position:fixed;
+  top:0;
+  left:0;
+  height:100vh;
+}
+
+.employer-sidebar h2{
+  margin-bottom:30px;
+  font-size:20px;
+}
+
+.employer-sidebar a{
+  color:#cfd8ff;
+  text-decoration:none;
+  padding:12px;
+  border-radius:8px;
+  margin-bottom:10px;
+  display:block;
+}
+
+.employer-sidebar a:hover,
+.employer-sidebar a.active{
+  background:#0f2a50;
+}
+
+.employer-sidebar button{
+  margin-top:auto;
+  padding:12px;
+  border:none;
+  background:#fff;
+  color:#081a32;
+  border-radius:8px;
+}
+
+/* Main */
+.employer-main{
+  margin-left:250px;
+  width:calc(100% - 250px);
+  padding:15px;
+  box-sizing:border-box;
+}
+
+/* ============================= */
+/* 🔹 PROFILE */
+/* ============================= */
+.profile-page{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  min-height:100vh;
+}
+
+/* SINGLE CLEAN CARD */
+.company-profile-card{
+  width:100%;
+  max-width:600px;
+  background:#fff;
+  border-radius:18px;
+  padding:30px;
+  box-shadow:0 20px 40px rgba(0,0,0,0.08);
+}
+
+/* VIEW MODE */
+.profile-view{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:8px;
+}
+
+.profile-title{
+  font-size:22px;
+  margin-bottom:10px;
+}
+
+.company-logo{
+  width:120px;
+  height:120px;
+  border-radius:50%;
+  object-fit:cover;
+}
+
+.company-name{
+  font-size:20px;
+  font-weight:600;
+}
+
+.company-info p{
+  margin:4px 0;
+  font-size:14px;
+}
+
+/* BUTTON */
+.btn{
+  margin-top:15px;
+  padding:10px 20px;
+  border-radius:10px;
+  border:none;
+  cursor:pointer;
+}
+
+.btn.primary{
+  background:linear-gradient(90deg,#6d28d9,#4f46e5);
+  color:#fff;
+}
+
+/* ============================= */
+/* 🔹 PROFILE FORM */
+/* ============================= */
+
+/* KEEP GLOBAL (used by other pages) */
+/* GLOBAL FORM (USED BY POST VACANCY) */
+.form-wrapper{
+  width:100%;
+  max-width:100%;
+  margin:30px auto;
+  background:#fff;
+  padding:30px;
+  border-radius:16px;
+  box-shadow:0 15px 35px rgba(0,0,0,0.15);
+}
+
+/* PROFILE SPECIFIC FIX */
+/* PROFILE PAGE ONLY */
+.profile-form{
+  width:100%;
+  max-width:100%;
+  background:transparent;
+  padding:0;
+  box-shadow:none;
+  margin:0;
+}
+.form-title{
+  text-align:center;
+  margin-bottom:20px;
+  font-size:20px;
+  font-weight:600;
+}
+
+/* GRID */
+.form-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:15px;
+  width:100%;
+}
+
+/* FORM GROUP */
+.form-group{
+  display:flex;
+  flex-direction:column;
+  text-align:left;
+}
+
+.form-group label{
+  font-size:14px;
+  margin-bottom:5px;
+}
+
+/* INPUT */
+.form-group input,
+.form-group textarea{
+  padding:10px;
+  border-radius:8px;
+  border:1px solid #ddd;
+  font-size:14px;
+  width:100%;          /* 🔥 prevents overflow */
+  box-sizing:border-box;  /* 🔥 ensures padding stays inside */
+}
+
+/* ADDRESS FULL WIDTH */
+.form-group.full{
+  grid-column:span 2;
+}
+
+/* BUTTONS */
+.submit-btn{
+  margin-top:20px;
+  width:100%;
+  padding:12px;
+  border:none;
+  border-radius:10px;
+  background:linear-gradient(90deg,#6d28d9,#4f46e5);
+  color:white;
+  font-weight:600;
+}
+
+.close-btn{
+  margin-top:10px;
+  width:100%;
+  padding:10px;
+  border:none;
+  border-radius:10px;
+  background:#6b7280;
+  color:white;
+}
+
+/* ============================= */
+/* 🔹 VACANCIES */
+/* ============================= */
+.page-container{
+  max-width:1100px;
+  margin:auto;
+}
+
+.table-wrapper{
+  background:#fff;
+  border-radius:12px;
+  overflow:hidden;
+  box-shadow:0 10px 25px rgba(0,0,0,0.1);
+}
+
+table{
+  width:100%;
+  border-collapse:collapse;
+}
+
+th{
+  background:#f3f4f6;
+  padding:14px;
+}
+
+td{
+  padding:14px;
+  border-top:1px solid #eee;
+}
+
+tr:hover{
+  background:#f9fafc;
+}
+
+td button{
+  padding:6px 12px;
+  border:none;
+  border-radius:6px;
+  margin-right:5px;
+}
+
+.view{background:#6c63ff;color:#fff;}
+.edit{background:#f59e0b;color:#fff;}
+.delete{background:#ef4444;color:#fff;}
+
+/* Pagination */
+.pagination{
+  margin-top:20px;
+  display:flex;
+  justify-content:center;
+  gap:6px;
+}
+
+.pagination button{
+  padding:6px 12px;
+  border:1px solid #ccc;
+  background:#fff;
+}
+
+.active-page{
+  background:#4f46e5;
+  color:#fff;
+}
+
+/* ============================= */
+/* 🔹 VACANCY FORM (SEPARATE) */
+/* ============================= */
+.vacancy-wrapper{
+  width:100%;
+  max-width:550px;
+  margin:10px auto;
+  background:#ffffff;
+  padding:15px;
+  border-radius:16px;
+  box-shadow:0 15px 35px rgba(0,0,0,0.5);
+}
+/* ============================= */
+/* 🔹 RESPONSIVE */
+/* ============================= */
+@media(max-width:768px){
+  .form-grid{
+    grid-template-columns:1fr;
+  }
+
+  .form-group.full{
+    grid-column:span 1;
+  }
+}

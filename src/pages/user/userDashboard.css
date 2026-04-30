@@ -1,0 +1,74 @@
+/* PAGE */
+.user-dashboard {
+  padding: 30px 40px;
+}
+
+.dashboard-title {
+  font-size: 26px;
+  margin-bottom: 25px;
+  font-weight: 600;
+}
+
+.dashboard-title span {
+  color: #6C3EF4;
+}
+
+/* GRID */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 20px;
+}
+
+/* CARD */
+.dashboard-card {
+  background: #f8f9fb;
+  border-radius: 14px;
+  padding: 20px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+  transition: 0.3s;
+  cursor: pointer;
+}
+
+.dashboard-card:hover {
+  transform: translateY(-5px);
+}
+
+/* TITLE */
+.dashboard-card h3 {
+  margin-bottom: 10px;
+}
+
+/* TEXT */
+.dashboard-card p {
+  color: #666;
+  margin-bottom: 15px;
+}
+
+/* BUTTON */
+.dashboard-card button {
+  background: #6C3EF4;
+  color: white;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+/* BUTTON SAME AS ADMIN */
+.dashboard-btn {
+  background: linear-gradient(135deg, #7b2ff7, #5f2eea);
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 14px;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: 0.3s;
+}
+
+.dashboard-btn:hover {
+  opacity: 0.9;
+  transform: scale(1.05);
+}
