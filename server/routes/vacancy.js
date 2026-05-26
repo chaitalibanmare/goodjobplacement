@@ -1,185 +1,187 @@
 const express = require("express");
 const router = express.Router();
-const Vacancy = require("../models/vacancy");
-const authMiddleware = require("../middleware/auth"); // 🔥 add this
-const mongoose = require("mongoose");
+const supabase = require("../supabaseClient"); // ✅ Added Supabase
+const authMiddleware = require("../middleware/auth");
 
 // ================= CREATE VACANCY (Employer) =================
 router.post("/create", authMiddleware, async (req, res) => {
   try {
+    const { data, error } = await supabase
+      .from('vacancies')
+      .insert([{
+        company_name: req.body.companyName,
+        location: req.body.location,
+        field: req.body.field,
+        total_vacancies: parseInt(req.body.totalVacancies) || 0,
+        time_type: req.body.timeType,
+        posted_on: req.body.postedOn,
+        last_date: req.body.lastDate,
+        description: req.body.description,
+        employer_id: req.user.id
+      }])
+      .select()
 
-    const mongoose = require("mongoose");
-
-    const vacancy = new Vacancy({
-      ...req.body,
-      employerId: new mongoose.Types.ObjectId(req.user.id) // ✅ FINAL FIX
-    });
-
-    await vacancy.save();
-
-    res.json({ message: "Created", vacancy });
+    if (error) throw error
+    res.json({ message: "Created", vacancy: data[0] });
 
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Error" });
+    res.status(500).json({ error: "Error creating vacancy" });
   }
 });
 
+// ================= GET ALL VACANCIES (Public) =================
+router.get("/all", async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('vacancies')
+      .select('*')
+      .order('created_at', { ascending: false })
+
+    if (error) throw error
+    res.json(data);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error fetching vacancies" });
+  }
+});
 
 // ================= GET EMPLOYER VACANCIES =================
-
-
 router.get("/employer", authMiddleware, async (req, res) => {
   try {
+    const { data, error } = await supabase
+      .from('vacancies')
+      .select('*')
+      .eq('employer_id', req.user.id)
 
-    const userId = new mongoose.Types.ObjectId(req.user.id);
-
-    const vacancies = await Vacancy.find({
-      employerId: userId
-    }).sort({ createdAt: -1 });
-
-    console.log("FOUND:", vacancies);
-
-    res.json(vacancies);
-
+    if (error) throw error
+    res.json(data);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Server error" });
+    res.status(500).json({ error: "Error fetching employer vacancies" });
   }
 });
 
+// ================= GET APPROVED VACANCIES (Public/Student) =================
+router.get("/approved", async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('vacancies')
+      .select('*')
+      .eq('verification_status', 'verified')
+      .eq('admin_enabled', true)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error
+    res.json(data);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error fetching approved vacancies" });
+  }
+});
+
+// ================= GET SINGLE VACANCY =================
+router.get("/:id", async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('vacancies')
+      .select('*')
+      .eq('id', req.params.id)
+      .single()
+
+    if (error) throw error
+    res.json(data);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error fetching vacancy" });
+  }
+});
 
 // ================= DELETE VACANCY =================
 router.delete("/:id", authMiddleware, async (req, res) => {
   try {
+    // Delete dependent applications first to avoid foreign key constraints
+    await supabase.from('applications').delete().eq('vacancy_id', req.params.id);
 
-    const vacancy = await Vacancy.findById(req.params.id);
+    const { error } = await supabase
+      .from('vacancies')
+      .delete()
+      .eq('id', req.params.id);
 
-    if (!vacancy) {
-      return res.status(404).json({ error: "Vacancy not found" });
-    }
-
-    // 🔥 allow only owner
-    if (vacancy.employerId.toString() !== req.user.id) {
-      return res.status(403).json({ error: "Unauthorized" });
-    }
-
-    await Vacancy.findByIdAndDelete(req.params.id);
-
-    res.json({ message: "Vacancy deleted successfully" });
-
+    if (error) throw error;
+    res.json({ message: "Deleted" });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Delete failed" });
+    res.status(500).json({ error: "Error deleting vacancy", details: err.message });
   }
 });
 
-
-// ================= UPDATE VACANCY (EDIT) =================
-router.put("/:id", authMiddleware, async (req, res) => {
-  try {
-
-    const vacancy = await Vacancy.findById(req.params.id);
-
-    if (!vacancy) {
-      return res.status(404).json({ error: "Vacancy not found" });
-    }
-
-    if (vacancy.employerId.toString() !== req.user.id) {
-      return res.status(403).json({ error: "Unauthorized" });
-    }
-
-    const updated = await Vacancy.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true }
-    );
-
-    res.json(updated);
-
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Update failed" });
-  }
-});
-
-
-// ================= GET ALL VACANCIES (ADMIN) =================
-router.get("/all", async (req, res) => {
-  try {
-    const vacancies = await Vacancy.find().sort({ createdAt: -1 });
-    res.json({ vacancies });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Server error" });
-  }
-});
-
-
-// ================= GET APPROVED VACANCIES (USERS) =================
-router.get("/approved", async (req, res) => {
-  try {
-    const vacancies = await Vacancy.find({
-      verificationStatus: "verified",
-      adminEnabled: true
-    }).sort({ createdAt: -1 });
-
-    res.json({ vacancies });
-
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Server error" });
-  }
-});
-
-
-// ================= ENABLE / DISABLE VACANCY =================
-router.put("/enable/:id", async (req, res) => {
-  try {
-
-    const vacancy = await Vacancy.findById(req.params.id);
-
-    if (!vacancy) {
-      return res.status(404).json({ error: "Vacancy not found" });
-    }
-
-    vacancy.adminEnabled = !vacancy.adminEnabled;
-    await vacancy.save();
-
-    res.json({
-      success: true,
-      adminEnabled: vacancy.adminEnabled
-    });
-
-  } catch (error) {
-    console.error("Enable error:", error);
-    res.status(500).json({ error: "Failed to update status" });
-  }
-});
-
-
-// ================= VERIFY VACANCY =================
+// ================= VERIFY VACANCY (Admin) =================
 router.put("/verify/:id", async (req, res) => {
   try {
+    const { data, error } = await supabase
+      .from('vacancies')
+      .update({ verification_status: 'verified', admin_enabled: true })
+      .eq('id', req.params.id)
+      .select()
 
-    const vacancy = await Vacancy.findByIdAndUpdate(
-      req.params.id,
-      {
-        verificationStatus: "verified",
-        verifiedAt: new Date()
-      },
-      { new: true }
-    );
-
-    res.json({
-      success: true,
-      vacancy
-    });
-
+    if (error) throw error
+    res.json({ message: "Verified", vacancy: data[0] });
   } catch (err) {
-    res.status(500).json({ error: "Verification failed" });
+    console.error(err);
+    res.status(500).json({ error: "Error verifying vacancy" });
   }
 });
 
+// ================= ENABLE/DISABLE VACANCY (Admin) =================
+router.put("/enable/:id", async (req, res) => {
+  try {
+    const { data: vacancy, error: fetchError } = await supabase
+      .from('vacancies')
+      .select('admin_enabled')
+      .eq('id', req.params.id)
+      .single()
+
+    if (fetchError) throw fetchError
+
+    const { data, error } = await supabase
+      .from('vacancies')
+      .update({ admin_enabled: !vacancy.admin_enabled })
+      .eq('id', req.params.id)
+      .select()
+
+    if (error) throw error
+    res.json({ message: "Status updated", vacancy: data[0] });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error updating vacancy status" });
+  }
+});
+
+// ================= UPDATE VACANCY =================
+router.put("/:id", authMiddleware, async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('vacancies')
+      .update({
+        company_name: req.body.company_name || req.body.companyName,
+        location: req.body.location,
+        field: req.body.field,
+        total_vacancies: parseInt(req.body.total_vacancies || req.body.totalVacancies) || 0,
+        time_type: req.body.time_type || req.body.timeType,
+        posted_on: req.body.posted_on || req.body.postedOn,
+        last_date: req.body.last_date || req.body.lastDate,
+        description: req.body.description,
+      })
+      .eq('id', req.params.id)
+      .select();
+
+    if (error) throw error;
+    res.json({ message: "Updated", vacancy: data ? data[0] : null });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error updating vacancy" });
+  }
+});
 
 module.exports = router;

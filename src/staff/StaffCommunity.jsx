@@ -10,7 +10,9 @@ export default function StaffCommunity() {
     pending: 0,
   });
 
-  const userId = "staff123"; // later replace with logged user
+  // GET REAL STAFF ID
+  const staff = JSON.parse(localStorage.getItem("staff") || "{}");
+  const userId = staff.id;
 
   useEffect(() => {
     fetch(`http://localhost:5000/api/community/stats/${userId}`)

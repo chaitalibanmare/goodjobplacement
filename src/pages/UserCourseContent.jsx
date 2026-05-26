@@ -13,7 +13,7 @@ export default function UserCourseContent() {
       setCourse(courseData);
 
       // load progress
-      const saved = localStorage.getItem(`progress_${courseData._id}`);
+      const saved = localStorage.getItem(`progress_${courseData.id}`);
       setCurrentIndex(saved ? Number(saved) : 0);
     }
   }, [courseData]);
@@ -37,7 +37,7 @@ export default function UserCourseContent() {
 
   const changeLecture = (index) => {
     setCurrentIndex(index);
-    localStorage.setItem(`progress_${course._id}`, index);
+    localStorage.setItem(`progress_${course.id}`, index);
   };
 
   return (
@@ -57,7 +57,7 @@ export default function UserCourseContent() {
               width="100%"
               height="360"
               src={`https://www.youtube.com/embed/${getVideoId(
-                course.youtubeLinks[currentIndex]
+                course.youtubeLinks?.[currentIndex] || ""
               )}`}
               allowFullScreen
             />
@@ -115,17 +115,19 @@ export default function UserCourseContent() {
         <div className="sidebar">
           <h3>📚 Course Content</h3>
 
-          {course.youtubeLinks?.map((link, i) => (
+          {course.youtubeLinks && course.youtubeLinks.length > 0 ? (
+            course.youtubeLinks.map((link, i) => (
             <div
               key={i}
               onClick={() => changeLecture(i)}
-              className={`lecture ${
-                i === currentIndex ? "active" : ""
-              }`}
+              className={`lecture ${i === currentIndex ? "active" : ""
+                }`}
             >
               {i < currentIndex ? "✔" : "▶"} Lecture {i + 1}
             </div>
-          ))}
+          ))) : (
+            <p style={{ padding: "10px", color: "#666" }}>No lectures available.</p>
+          )}
         </div>
       </div>
 

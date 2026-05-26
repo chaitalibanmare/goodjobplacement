@@ -70,94 +70,70 @@
   position: relative; /* ✅ IMPORTANT for dropdown */
 }
 
-/* USER BOX */
-.user-box {
+.search-bar {
   display: flex;
   align-items: center;
-  gap: 8px;
-  cursor: pointer; /* ✅ clickable */
-  padding: 5px 10px;
-  border-radius: 8px;
-  transition: 0.3s;
-}
-
-.user-box:hover {
   background: rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  padding: 6px 14px;
+  gap: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  width: 250px;
 }
 
-/* AVATAR */
-.user-avatar {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 2px solid white;
+.search-bar svg {
+  color: #a0a0a0;
 }
 
-/* USER NAME */
-.user-name {
-  font-weight: 500;
+.search-bar input {
+  background: transparent;
+  border: none;
   color: white;
-}
-
-/* ❌ REMOVE OLD LOGOUT STYLE */
-/* .logout-text { ... } */
-
-/* ✅ DROPDOWN */
-.user-dropdown {
-  position: absolute;
-  top: 55px;
-  right: 0;
-  background: white;
-  color: #333;
-  border-radius: 10px;
-  padding: 10px 0;
-  width: 160px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-  z-index: 1000;
-  animation: fadeIn 0.2s ease-in-out;
-}
-
-/* DROPDOWN ITEMS */
-.user-dropdown p {
-  margin: 0;
-  padding: 10px 16px;
-  cursor: pointer;
+  outline: none;
+  width: 100%;
   font-size: 14px;
+}
+
+.search-bar input::placeholder {
+  color: #a0a0a0;
+}
+
+.icon-btn {
+  background: transparent;
+  border: none;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  border-radius: 50%;
   transition: 0.2s;
 }
 
-.user-dropdown p:hover {
-  background: #f3f4f6;
-  color: #6c3cff;
+.icon-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
 }
 
-/* SMALL ANIMATION */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(-5px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.user-box {
+.nav-profile-btn {
   display: flex;
   align-items: center;
-  gap: 8px;
-  cursor: pointer; /* ✅ important */
-}
-
-.logout-text {
+  justify-content: center;
   cursor: pointer;
-  color: #E0E7FF;
-  font-size: 14px;
-  transition: 0.3s;
+  margin-left: 8px;
+  border-radius: 50%;
+  transition: 0.2s;
+  padding: 2px;
 }
 
-.logout-text:hover {
-  color: white;
+.nav-profile-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.nav-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(255, 255, 255, 0.8);
 }

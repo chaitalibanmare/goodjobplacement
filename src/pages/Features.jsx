@@ -32,23 +32,27 @@ export default function Features(){
   const [selected, setSelected] = React.useState(null)
 
   return (
-    <section className="section">
-      <div className="container">
-        <h2>Features</h2>
+    <div className="home-wrapper" style={{ minHeight: '100vh', paddingBottom: '60px' }}>
+      <section className="home-section" style={{ paddingTop: '40px' }}>
+        <div className="container" style={{ padding: 0 }}>
+          <div className="section-header" style={{ marginBottom: '30px' }}>
+            <h2 className="section-title">Features</h2>
+            <p className="section-subtitle">A focused set of offerings to boost employability and career growth.</p>
+          </div>
 
-        <p style={{color:'var(--muted)',marginTop:8,marginBottom:18}}>A focused set of offerings to boost employability and career growth.</p>
-
-        <div className="feature-list">
+        <div style={{ marginTop: '30px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
           {features.map(f => (
-            <div key={f.title} className="feature-card card">
-              <div className="feature-icon"><img src={f.icon} alt="" style={{width:28,height:28}}/></div>
-              <div className="feature-body">
-                <h4>{f.title}</h4>
-                <p className="muted">{f.desc}</p>
-                <div style={{marginTop:12,display:'flex',gap:8}}>
-                  <button className="btn primary" onClick={()=>setSelected(f)}>Enroll</button>
-                  <button className="btn ghost" onClick={()=>setSelected(f)}>Learn More</button>
-                </div>
+            <div key={f.title} style={{ display: 'flex', alignItems: 'flex-start', gap: '16px', padding: '16px', backgroundColor: '#fff', borderRadius: '12px', border: '1px solid rgba(0,0,0,0.05)', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
+              <div style={{ flexShrink: 0, width: '48px', height: '48px', backgroundColor: '#fafbfc', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(0,0,0,0.05)' }}>
+                <img src={f.icon} alt="" style={{ width: '24px', height: '24px' }} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <h4 style={{ margin: '0 0 4px 0', fontSize: '18px', color: '#111', fontWeight: '600' }}>{f.title}</h4>
+                <p style={{ margin: 0, fontSize: '15px', color: '#64748b', lineHeight: '1.5' }}>{f.desc}</p>
+              </div>
+              <div style={{ display: 'flex', gap: '8px', alignSelf: 'center', flexShrink: 0 }}>
+                <button className="btn primary" style={{ padding: '8px 16px', fontSize: '13px' }} onClick={() => setSelected(f)}>Enroll</button>
+                <button className="btn ghost" style={{ padding: '8px 16px', fontSize: '13px' }} onClick={() => setSelected(f)}>Learn More</button>
               </div>
             </div>
           ))}
@@ -67,6 +71,7 @@ export default function Features(){
           </div>
         )}
       </div>
-    </section>
+      </section>
+    </div>
   )
 }

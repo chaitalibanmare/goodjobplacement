@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useParams } from "react-router-dom";
 
 export default function CommunityDetails() {
@@ -8,13 +8,16 @@ export default function CommunityDetails() {
   const [posts, setPosts] = useState([]);
   const [text, setText] = useState("");
   const [image, setImage] = useState(null);
+  const fileInputRef = useRef(null);
 
   // ✅ EDIT STATE
   const [editingPostId, setEditingPostId] = useState(null);
   const [editText, setEditText] = useState("");
   const [editImage, setEditImage] = useState(null);
 
-  const userId = "staff123"; // replace later with real login
+  // GET REAL STAFF ID
+  const staff = JSON.parse(localStorage.getItem("staff") || "{}");
+  const userId = staff.id;
 
   // ===== LOAD DATA =====
   useEffect(() => {
@@ -28,7 +31,7 @@ export default function CommunityDetails() {
 
   const fetchPosts = async () => {
     try {
-      const res = await fetch(`http://localhost:5000/api/posts/${id}`);
+      const res = await fetch(`http://localhost:5000/api/posts/community/${id}`);
       const data = await res.json();
       setPosts(data);
     } catch (err) {
@@ -57,6 +60,7 @@ export default function CommunityDetails() {
 
       setText("");
       setImage(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
       fetchPosts();
     } catch (err) {
       console.error(err);
@@ -81,7 +85,7 @@ export default function CommunityDetails() {
 
   // ===== EDIT POST =====
   const handleEdit = (post) => {
-    setEditingPostId(post._id);
+    setEditingPostId(post.id);
     setEditText(post.text);
   };
 
@@ -107,7 +111,7 @@ export default function CommunityDetails() {
 
   return (
     <div className="community-detail-container">
-      
+
       {/* ===== COMMUNITY HEADER ===== */}
       <h2>{community?.name}</h2>
 
@@ -121,6 +125,7 @@ export default function CommunityDetails() {
 
         <input
           type="file"
+          ref={fileInputRef}
           onChange={(e) => setImage(e.target.files[0])}
         />
 
@@ -133,27 +138,27 @@ export default function CommunityDetails() {
           <p>No posts yet</p>
         ) : (
           posts.map((p) => (
-            <div key={p._id} className="post-card">
+            <div key={p.id} className="post-card">
 
               {/* ===== EDIT MODE ===== */}
-              {editingPostId === p._id ? (
+              {editingPostId === p.id ? (
                 <>
-                <textarea
-                  value={editText}
-                  onChange={(e) => setEditText(e.target.value)}
-                  style={{
-                    width: "100%",
-                    minHeight: "100px",
-                    padding: "10px",
-                    borderRadius: "8px",
-                    border: "1px solid #ccc",
-                    fontSize: "14px",
-                    resize: "vertical"
-                  }}
-                />
+                  <textarea
+                    value={editText}
+                    onChange={(e) => setEditText(e.target.value)}
+                    style={{
+                      width: "100%",
+                      minHeight: "100px",
+                      padding: "10px",
+                      borderRadius: "8px",
+                      border: "1px solid #ccc",
+                      fontSize: "14px",
+                      resize: "vertical"
+                    }}
+                  />
 
                   <div style={{ marginTop: "10px" }}>
-                    <button onClick={() => handleUpdate(p._id)}>
+                    <button onClick={() => handleUpdate(p.id)}>
                       Save
                     </button>
 
@@ -172,46 +177,46 @@ export default function CommunityDetails() {
                   {/* IMAGE */}
                   {p.image && (
                     <img
-                      src={`http://localhost:5000/uploads/${p.image}`}
+                      src={`http://localhost:5000${p.image}`}
                       alt="post"
                       className="post-img"
                     />
                   )}
 
                   {/* ===== ACTION BUTTONS ===== */}
-                  {p.userId === userId && (
-  <div style={{ marginTop: "10px" }}>
+                  {p.user_id === userId && (
+                    <div style={{ marginTop: "10px" }}>
 
-    {/* ✅ TEXT EXISTS → EDIT + DELETE */}
-    {p.text && p.text.trim() !== "" ? (
-      <>
-        <button onClick={() => handleEdit(p)}>
-          Edit
-        </button>
+                      {/* ✅ TEXT EXISTS → EDIT + DELETE */}
+                      {p.text && p.text.trim() !== "" ? (
+                        <>
+                          <button onClick={() => handleEdit(p)}>
+                            Edit
+                          </button>
 
-        <button
-          onClick={() => handleDelete(p._id)}
-          style={{ marginLeft: "10px", color: "red" }}
-        >
-          Delete
-        </button>
-      </>
-    ) : (
-      /* ✅ IMAGE ONLY → DELETE */
-      <button
-        onClick={() => handleDelete(p._id)}
-        style={{ color: "red" }}
-      >
-        Delete
-      </button>
-    )}
+                          <button
+                            onClick={() => handleDelete(p.id)}
+                            style={{ marginLeft: "10px", color: "red" }}
+                          >
+                            Delete
+                          </button>
+                        </>
+                      ) : (
+                        /* ✅ IMAGE ONLY → DELETE */
+                        <button
+                          onClick={() => handleDelete(p.id)}
+                          style={{ color: "red" }}
+                        >
+                          Delete
+                        </button>
+                      )}
 
-  </div>
-)}
- </>
-   )}
-   <span className="post-time">
-                {new Date(p.createdAt).toLocaleString()}
+                    </div>
+                  )}
+                </>
+              )}
+              <span className="post-time">
+                {new Date(p.created_at).toLocaleString()}
               </span>
 
             </div>

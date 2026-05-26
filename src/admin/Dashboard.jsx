@@ -1,7 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 
-export default function Dashboard() {
+export default function Dashboard({ navigateTo }) {
 
   const navigate = useNavigate();
 
@@ -36,7 +36,7 @@ export default function Dashboard() {
               <p className="muted">Manage registered users</p>
               <button
                 className="btn primary"
-                onClick={() => navigate("/admin/users")}
+                onClick={() => navigateTo ? navigateTo('users') : navigate("/admin/users")}
               >
                 View Users
               </button>
@@ -47,7 +47,7 @@ export default function Dashboard() {
               <p>View and manage staff members</p>
                <button
                  className="btn primary"
-                 onClick={() => navigate("/admin/staff")}
+                 onClick={() => navigateTo ? navigateTo('staff') : navigate("/admin/staff")}
             >
                 Manage Staff
               </button>
@@ -59,7 +59,7 @@ export default function Dashboard() {
               <p>View registered employers</p>
               <button 
               className="btn primary"
-              onClick={() => navigate("/admin/employers")}
+              onClick={() => navigateTo ? navigateTo('employers') : navigate("/admin/employers")}
               >
                 View Employers
                </button>
@@ -72,7 +72,7 @@ export default function Dashboard() {
               <p className="muted">Add or manage job vacancies</p>
               <button
                 className="btn primary"
-                onClick={() => navigate("/admin/vacancies")}
+                onClick={() => navigateTo ? navigateTo('vacancies') : navigate("/admin/vacancies")}
               >
                 Manage Jobs
               </button>
@@ -83,7 +83,7 @@ export default function Dashboard() {
               <p className="muted">Add or edit courses</p>
               <button
                 className="btn primary"
-                onClick={() => navigate("/admin/courses")}
+                onClick={() => navigateTo ? navigateTo('courses') : navigate("/admin/courses")}
               >
                 Manage Courses
               </button>
@@ -94,7 +94,7 @@ export default function Dashboard() {
               <p className="muted">Track placements and offers</p>
               <button
                 className="btn primary"
-                onClick={() => navigate("/admin/activity")}
+                onClick={() => navigateTo ? navigateTo('activity') : navigate("/admin/activity")}
               >
                 View Activity
               </button>
@@ -105,12 +105,22 @@ export default function Dashboard() {
               <p className="muted">Manage communities</p>
               <button
                 className="btn primary"
-                onClick={() => navigate("/admin/community")}
+                onClick={() => navigateTo ? navigateTo('community') : navigate("/admin/community")}
               >
                 Manage Communities
               </button>
             </div>
-                        
+            
+            <div className="card">
+              <h3>Course Enrollments</h3>
+              <p className="muted">View payments and enrollments</p>
+              <button
+                className="btn primary"
+                onClick={() => navigateTo ? navigateTo('payments') : navigate("/admin/payments")}
+              >
+                View Enrollments
+              </button>
+            </div>
 
           </div>
 

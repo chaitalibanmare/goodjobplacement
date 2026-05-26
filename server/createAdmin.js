@@ -1,32 +1,44 @@
 require("dotenv").config()
-const mongoose = require("mongoose")
 const bcrypt = require("bcryptjs")
-const User = require("./models/User")
-
-mongoose.connect(process.env.MONGO_URI)
+const supabase = require("./supabaseClient") // ✅ Use Supabase
 
 async function createAdmin() {
+  try {
+    // 1. Check if admin already exists
+    const { data: existingAdmin } = await supabase
+      .from('users')
+      .select('email')
+      .eq('email', "admin@gjp.com")
+      .single()
 
-  const existingAdmin = await User.findOne({ email: "admin@gjp.com" })
+    if (existingAdmin) {
+      console.log("Admin already exists")
+      process.exit()
+    }
 
-  if (existingAdmin) {
-    console.log("Admin already exists")
+    // 2. Hash the password
+    const hashedPassword = await bcrypt.hash("admin123", 10)
+
+    // 3. Insert into Supabase
+    const { data, error } = await supabase
+      .from('users')
+      .insert([{
+        name: "Admin",
+        email: "admin@gjp.com",
+        password_hash: hashedPassword,
+        role: "admin"
+      }])
+      .select()
+
+    if (error) throw error
+
+    console.log("✅ Admin created successfully in Supabase")
     process.exit()
+
+  } catch (err) {
+    console.error("❌ Error creating admin:", err.message)
+    process.exit(1)
   }
-
-  const hashedPassword = await bcrypt.hash("admin123", 10)
-
-  const admin = new User({
-    name: "Admin",
-    email: "admin@gjp.com",
-    passwordHash: hashedPassword,
-    role: "admin"
-  })
-
-  await admin.save()
-
-  console.log("✅ Admin created successfully")
-  process.exit()
 }
 
 createAdmin()

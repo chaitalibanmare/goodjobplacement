@@ -67,11 +67,11 @@ export default function StaffVacancies() {
 
       {/* 📋 TABLE */}
       <table style={{
-  width: "100%",           // ✅ reduced
-  margin: "0 auto",       // ✅ center align
-  borderCollapse: "collapse",
-  background: "white"
-}}>
+        width: "100%",           // ✅ reduced
+        margin: "0 auto",       // ✅ center align
+        borderCollapse: "collapse",
+        background: "white"
+      }}>
 
         <thead>
           <tr>
@@ -84,28 +84,28 @@ export default function StaffVacancies() {
 
         <tbody>
           {currentData.map(app => (
-            <tr key={app._id}>
+            <tr key={app.id}>
 
               <td style={{ ...tdStyle, padding: "6px" }}>
-  <img
-    src={`http://localhost:5000${app.photo}`}
-    alt="user"
-    onError={(e) => {
-      e.target.src = "https://i.pravatar.cc/50";
-    }}
-    style={{
-      width: "40px",          // ✅ reduced size
-      height: "40px",
-      borderRadius: "50%",
-      objectFit: "cover",
-      border: "2px solid #081a32",
-      display: "block",       // ✅ helps centering
-      margin: "0 auto"        // ✅ center align
-    }}
-  />
-</td>
+                <img
+                  src={app.photo ? `http://localhost:5000/uploads/${app.photo.replace(/^\/uploads\//, '')}` : "https://i.pravatar.cc/50"}
+                  alt="user"
+                  onError={(e) => {
+                    e.target.src = "https://i.pravatar.cc/50";
+                  }}
+                  style={{
+                    width: "40px",          // ✅ reduced size
+                    height: "40px",
+                    borderRadius: "50%",
+                    objectFit: "cover",
+                    border: "2px solid #081a32",
+                    display: "block",       // ✅ helps centering
+                    margin: "0 auto"        // ✅ center align
+                  }}
+                />
+              </td>
 
-              <td style={tdStyle}>{app.userName}</td>
+              <td style={tdStyle}>{app.user_name || app.userName}</td>
               <td style={tdStyle}>{app.company}</td>
               <td style={tdStyle}>{app.position}</td>
 

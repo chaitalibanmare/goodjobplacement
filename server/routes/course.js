@@ -1,230 +1,285 @@
 const express = require("express");
 const router = express.Router();
-const Course = require("../models/Course");
-const Enrollment = require("../models/Enrollment");
+const supabase = require("../supabaseClient"); // ✅ Added Supabase
 const multer = require("multer");
 const path = require("path");
-const auth = require("../middleware/auth");
+const auth = require("../middleware/auth"); // ✅ Added auth middleware
 
-// ================== MULTER STORAGE ==================
-const storage = multer.diskStorage({
-destination: (req, file, cb) => {
-cb(null, path.join(__dirname, "../uploads"));
-},
-filename: (req, file, cb) => {
-cb(null, Date.now() + "-" + file.originalname);
-}
+console.log("✅ COURSE ROUTE FILE LOADED");
+
+// GET ENROLLED COURSES (USER)
+router.get("/my-courses", auth, async (req, res) => {
+  try {
+    // Get all successful payments for this user (acting as enrollments)
+    const { data: payments, error: payError } = await supabase
+      .from('payments')
+      .select('course_id')
+      .eq('user_id', req.user.id)
+      .eq('status', 'success');
+
+    if (payError) throw payError;
+
+    if (!payments || payments.length === 0) {
+      return res.json([]);
+    }
+
+    const courseIds = payments.map(p => p.course_id);
+
+    // Fetch details for these courses
+    const { data: courses, error: courseError } = await supabase
+      .from('courses')
+      .select('*')
+      .in('id', courseIds);
+
+    if (courseError) throw courseError;
+
+    const mappedCourses = courses.map(c => ({
+      ...c,
+      startDate: c.start_date,
+      youtubeLinks: c.youtube_links,
+      isApproved: c.is_approved,
+      title: c.name
+    }));
+
+    res.json(mappedCourses);
+  } catch (err) {
+    console.error("My Courses Fetch Error:", err);
+    res.status(500).json({ error: "Error fetching your courses" });
+  }
 });
 
+// MULTER
+const storage = multer.diskStorage({
+  destination: "uploads/",
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + "-" + file.originalname);
+  },
+});
 const upload = multer({ storage });
 
-// ================== ADD COURSE ==================
-router.post(
-"/add",
-upload.fields([
-{ name: "image", maxCount: 1 },
-{ name: "notes", maxCount: 10 }   // ✅ ADDED
-]),
-async (req, res) => {
-try {
-const course = new Course({
-  name: req.body.name,
-  description: req.body.description,
-  fees: req.body.fees,
-  duration: req.body.duration,
-  mode: req.body.mode,
-  category: req.body.category,
-  instructor: req.body.instructor,
-  startDate: req.body.startDate,
+// ADD COURSE
+router.post("/add", upload.fields([{ name: "image", maxCount: 1 }, { name: "notes", maxCount: 10 }]), async (req, res) => {
+  try {
+    const courseData = { ...req.body };
 
-  image: req.files?.image ? req.files.image[0].filename : "",
+    // Handle Image
+    if (req.files && req.files["image"]) {
+      courseData.image = req.files["image"][0].filename;
+    }
 
-  youtubeLinks: req.body.youtubeLinks
-  ? JSON.parse(req.body.youtubeLinks)
-  : [],
+    // Handle Notes (Multiple PDFs)
+    if (req.files && req.files["notes"]) {
+      courseData.notes = req.files["notes"].map(file => file.filename);
+    } else {
+      courseData.notes = [];
+    }
 
-  notes: req.files?.notes
-    ? req.files.notes.map(file => file.filename)
-    : [],
+    // Handle YouTube Links (Frontend sends them as a JSON string)
+    if (typeof courseData.youtubeLinks === "string") {
+      try {
+        courseData.youtubeLinks = JSON.parse(courseData.youtubeLinks);
+      } catch (e) {
+        courseData.youtubeLinks = [courseData.youtubeLinks];
+      }
+    }
 
-  isApproved: false
+    // Map camelCase to snake_case for Supabase
+    if (courseData.startDate) {
+      courseData.start_date = courseData.startDate;
+      delete courseData.startDate;
+    }
+    if (courseData.youtubeLinks) {
+      courseData.youtube_links = courseData.youtubeLinks;
+      delete courseData.youtubeLinks;
+    }
+
+    // Ensure is_approved is false by default if not set
+    courseData.is_approved = false;
+
+    // Save to Supabase
+    const { data, error } = await supabase
+      .from('courses')
+      .insert([courseData])
+      .select()
+
+    if (error) {
+      console.error("Supabase Error:", error);
+      return res.status(400).json({ error: "Database Error", details: error.message });
+    }
+    
+    res.status(201).json({ message: "Course added successfully", course: data[0] });
+
+  } catch (err) {
+    console.error("Server Error:", err);
+    res.status(500).json({ error: "Error adding course", details: err.message });
+  }
 });
 
-  await course.save();
-
-  res.json({ message: "Course added successfully" });
-} catch (err) {
-  console.log("ERROR:", err);
-  res.status(500).json({ message: err.message });
-}
-
-
-}
-);
-
-// ================== UPDATE COURSE ==================
-router.put(
-"/:id",
-upload.fields([
-{ name: "image", maxCount: 1 },
-{ name: "notes", maxCount: 10 }   // ✅ ADDED
-]),
-async (req, res) => {
-try {
-const existing = await Course.findById(req.params.id);
-
-
-  const updateData = {
-    name: req.body.name || existing.name,
-    description: req.body.description || existing.description,
-    fees: req.body.fees || existing.fees,
-    duration: req.body.duration || existing.duration,
-    mode: req.body.mode || existing.mode,
-    category: req.body.category || existing.category,
-    instructor: req.body.instructor || existing.instructor,
-    startDate: req.body.startDate || existing.startDate
-  };
-
-  // ✅ IMAGE
-  updateData.image = req.files?.image
-    ? req.files.image[0].filename
-    : existing.image;
-
-  // ✅ YOUTUBE LINKS
-  updateData.youtubeLinks = req.body.youtubeLinks
-    ? Array.isArray(req.body.youtubeLinks)
-      ? req.body.youtubeLinks
-      : [req.body.youtubeLinks]
-    : existing.youtubeLinks;
-
-  // ✅ NOTES
-  updateData.notes = req.files?.notes
-    ? req.files.notes.map(file => file.filename)
-    : existing.notes;
-
-  const updatedCourse = await Course.findByIdAndUpdate(
-    req.params.id,
-    updateData,
-    { new: true }
-  );
-
-  res.json(updatedCourse);
-} catch (err) {
-  console.log("UPDATE ERROR:", err);
-  res.status(500).json({ message: err.message });
-}
-
-
-}
-);
-
-// ================== DELETE ==================
-router.delete("/:id", async (req, res) => {
-try {
-await Course.findByIdAndDelete(req.params.id);
-res.json({ message: "Course deleted successfully" });
-} catch (err) {
-console.log("DELETE ERROR:", err);
-res.status(500).json({ message: err.message });
-}
-});
-
-// ================== STAFF VIEW ==================
+// GET ALL COURSES (STAFF)
 router.get("/staff", async (req, res) => {
-const courses = await Course.find();
-res.json(courses);
+  console.log("HIT /staff ROUTE");
+  try {
+    const { data, error } = await supabase
+      .from('courses')
+      .select('*')
+
+    if (error) throw error;
+    
+    // Map back to camelCase for frontend compatibility
+    const mappedData = data.map(c => ({
+      ...c,
+      startDate: c.start_date,
+      youtubeLinks: c.youtube_links,
+      isApproved: c.is_approved,
+      title: c.name
+    }));
+
+    res.json(mappedData);
+  } catch (err) {
+    console.error("Staff Fetch Error:", err);
+    res.status(500).json({ error: "Error fetching staff courses" });
+  }
 });
 
-// ================== APPROVE ==================
-router.put("/approve/:id", async (req, res) => {
-try {
-const course = await Course.findById(req.params.id);
+// GET ALL APPROVED COURSES (PUBLIC)
+router.get("/approved", async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('courses')
+      .select('*')
+      .eq('is_approved', true)
 
+    if (error) throw error
+    
+    const mappedData = data.map(c => ({
+      ...c,
+      startDate: c.start_date,
+      youtubeLinks: c.youtube_links,
+      isApproved: c.is_approved,
+      title: c.name
+    }));
 
-if (!course) {
-  return res.status(404).json({ message: "Course not found" });
-}
-
-course.isApproved = !course.isApproved;
-await course.save();
-
-res.json({
-  message: "Course approval updated",
-  isApproved: course.isApproved
+    res.json(mappedData);
+  } catch (err) {
+    console.error("Approved Fetch Error:", err);
+    res.status(500).json({ error: "Error fetching courses" });
+  }
 });
 
-
-} catch (err) {
-console.log("APPROVE ERROR:", err);
-res.status(500).json({ message: err.message });
-}
-});
-
-// ================== USER: GET APPROVED COURSES ==================
+// GET ALL (Generic)
 router.get("/", async (req, res) => {
-try {
-const courses = await Course.find({ isApproved: true });
-res.json(courses);
-} catch (err) {
-res.status(500).json({ message: err.message });
-}
+  try {
+    const { data, error } = await supabase
+      .from('courses')
+      .select('*')
+      .eq('is_approved', true)
+
+    if (error) throw error;
+    
+    const mappedData = data.map(c => ({
+      ...c,
+      startDate: c.start_date,
+      youtubeLinks: c.youtube_links,
+      isApproved: c.is_approved,
+      title: c.name
+    }));
+
+    res.json(mappedData);
+  } catch (err) {
+    console.error("All Fetch Error:", err);
+    res.status(500).json({ error: "Error fetching all courses" });
+  }
 });
 
-// ================== ENROLL ==================
-router.post("/enroll", auth, async (req, res) => {
-try {
-const userId = req.user.id;
-const { courseId } = req.body;
+// UPDATE COURSE
+router.put("/:id", upload.fields([{ name: "image", maxCount: 1 }, { name: "notes", maxCount: 10 }]), async (req, res) => {
+  try {
+    const courseData = { ...req.body };
 
+    // Handle Image
+    if (req.files && req.files["image"]) {
+      courseData.image = req.files["image"][0].filename;
+    }
 
-if (!userId || !courseId) {
-  return res.status(400).json({ message: "Missing data" });
-}
+    // Handle Notes
+    if (req.files && req.files["notes"]) {
+      courseData.notes = req.files["notes"].map(file => file.filename);
+    }
 
-const exists = await Enrollment.findOne({
-  user: userId,
-  course: courseId,
+    // Handle YouTube Links (Frontend sends them as a JSON string)
+    if (typeof courseData.youtubeLinks === "string") {
+      try {
+        courseData.youtubeLinks = JSON.parse(courseData.youtubeLinks);
+      } catch (e) {
+        courseData.youtubeLinks = [courseData.youtubeLinks];
+      }
+    }
+
+    // Map camelCase to snake_case for Supabase
+    if (courseData.startDate) {
+      courseData.start_date = courseData.startDate;
+      delete courseData.startDate;
+    }
+    if (courseData.youtubeLinks) {
+      courseData.youtube_links = courseData.youtubeLinks;
+      delete courseData.youtubeLinks;
+    }
+
+    const { data, error } = await supabase
+      .from('courses')
+      .update(courseData)
+      .eq('id', req.params.id)
+      .select()
+
+    if (error) {
+      console.error("Supabase Update Error:", error);
+      return res.status(400).json({ error: "Database Error", details: error.message });
+    }
+
+    res.json({ message: "Course updated successfully", course: data[0] });
+  } catch (err) {
+    console.error("Server Update Error:", err);
+    res.status(500).json({ error: "Error updating course", details: err.message });
+  }
 });
 
-if (exists) {
-  return res.json({ message: "Already enrolled" });
-}
+// DELETE COURSE
+router.delete("/:id", async (req, res) => {
+  try {
+    const { error } = await supabase
+      .from('courses')
+      .delete()
+      .eq('id', req.params.id)
 
-const newEnroll = await Enrollment.create({
-  user: userId,
-  course: courseId,
+    if (error) throw error
+    res.json({ message: "Course deleted successfully" });
+  } catch (err) {
+    res.status(500).json({ error: "Error deleting course" });
+  }
 });
 
-res.json({ message: "Success" });
+// GET SINGLE COURSE
+router.get("/:id", async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('courses')
+      .select('*')
+      .eq('id', req.params.id)
+      .single()
 
-
-} catch (err) {
-console.log(err);
-res.status(500).json({ message: "Error" });
-}
-});
-
-// ================== MY COURSES ==================
-router.get("/my-courses", auth, async (req, res) => {
-try {
-const userId = req.user.id;
-
-
-const enrollments = await Enrollment.find({
-  user: userId,
-}).populate("course");
-
-const courses = enrollments
-  .map(e => e.course)
-  .filter(c => c !== null);
-
-res.json(courses);
-
-
-} catch (err) {
-console.log(err);
-res.status(500).json({ message: "Error" });
-}
+    if (error) throw error
+    
+    res.json({
+      ...data,
+      startDate: data.start_date,
+      youtubeLinks: data.youtube_links,
+      isApproved: data.is_approved,
+      title: data.name
+    });
+  } catch (err) {
+    console.error("Single Fetch Error:", err);
+    res.status(500).json({ error: "Error fetching course" });
+  }
 });
 
 module.exports = router;

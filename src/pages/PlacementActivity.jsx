@@ -21,7 +21,7 @@ function PlacementActivity() {
   useEffect(() => {
     // Scroll to top when page loads
     window.scrollTo(0, 0);
-    
+
     try {
       const userData = JSON.parse(localStorage.getItem('gjp_user') || 'null');
       setUser(userData);
@@ -66,7 +66,7 @@ function PlacementActivity() {
   useEffect(() => {
     // Scroll to top when user state changes
     window.scrollTo(0, 0);
-    
+
     if (user?.role === "admin") {
       fetchAdminActivity();
     } else if (user?.role === "user") {
@@ -88,17 +88,17 @@ function PlacementActivity() {
         axios.get(`${baseUrl}/api/user/applications`, { headers: authHeaders }),
         axios.get(`${baseUrl}/api/vacancy/all`)
       ]);
-      
+
       const applications = appRes.data.applications || [];
       const vacancies = vacRes.data.vacancies || [];
-      
+
       const userStats = appRes.data.stats || {
         applied: applications.length,
         shortlisted: applications.filter(a => a.status === "shortlisted").length,
         rejected: applications.filter(a => a.status === "rejected").length,
         hired: applications.filter(a => a.status === "hired").length
       };
-      
+
       setUserApplications(applications);
       setJobs(vacancies);
       setStats(userStats);
@@ -142,10 +142,10 @@ function PlacementActivity() {
       await Promise.all(
         vacancies.map(async (vacancy) => {
           try {
-            const appRes = await axios.get(`http://localhost:5000/api/vacancy/${vacancy._id}/applicants`);
-            counts[vacancy._id] = appRes.data.applicants?.length || 0;
+            const appRes = await axios.get(`http://localhost:5000/api/vacancy/${vacancy.id}/applicants`);
+            counts[vacancy.id] = appRes.data.applicants?.length || 0;
           } catch (err) {
-            counts[vacancy._id] = 0;
+            counts[vacancy.id] = 0;
           }
         })
       );
@@ -286,7 +286,7 @@ function PlacementActivity() {
       const diffMs = now - new Date(date);
       const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
       const diffHours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-      
+
       if (diffDays > 0) return `${diffDays}d ago`;
       if (diffHours > 0) return `${diffHours}h ago`;
       return "Just now";
@@ -380,16 +380,16 @@ function PlacementActivity() {
                         borderRadius: "20px",
                         fontSize: "12px",
                         fontWeight: "600",
-                        background: 
+                        background:
                           application.status === "applied" ? "rgba(59, 130, 246, 0.1)" :
-                          application.status === "shortlisted" ? "rgba(168, 85, 247, 0.1)" :
-                          application.status === "rejected" ? "rgba(239, 68, 68, 0.1)" :
-                          application.status === "hired" ? "rgba(16, 185, 129, 0.1)" : "rgba(107, 114, 128, 0.1)",
+                            application.status === "shortlisted" ? "rgba(168, 85, 247, 0.1)" :
+                              application.status === "rejected" ? "rgba(239, 68, 68, 0.1)" :
+                                application.status === "hired" ? "rgba(16, 185, 129, 0.1)" : "rgba(107, 114, 128, 0.1)",
                         color:
                           application.status === "applied" ? "#3b82f6" :
-                          application.status === "shortlisted" ? "#a855f7" :
-                          application.status === "rejected" ? "#ef4444" :
-                          application.status === "hired" ? "#10b981" : "#6b7280"
+                            application.status === "shortlisted" ? "#a855f7" :
+                              application.status === "rejected" ? "#ef4444" :
+                                application.status === "hired" ? "#10b981" : "#6b7280"
                       }}>
                         {application.status === "applied" && "⏳ Applied"}
                         {application.status === "shortlisted" && "✨ Shortlisted"}
@@ -417,12 +417,12 @@ function PlacementActivity() {
   };
 
   const getAppliedVacancyIds = () => {
-    return userApplications.map(app => app.vacancyId?._id).filter(Boolean);
+    return userApplications.map(app => app.vacancyId?.id).filter(Boolean);
   };
 
   const renderAvailableVacancies = () => {
     const appliedIds = getAppliedVacancyIds();
-    const unappliedJobs = jobs.filter(job => !appliedIds.includes(job._id));
+    const unappliedJobs = jobs.filter(job => !appliedIds.includes(job.id));
 
     // Group jobs by company
     const jobsByCompany = {};
@@ -547,7 +547,7 @@ function PlacementActivity() {
               <h2 style={{ fontSize: "22px", fontWeight: "700", marginBottom: "24px", color: "var(--text)" }}>
                 Recommended jobs for you
               </h2>
-              
+
               {companies.map((company, companyIdx) => (
                 <div key={companyIdx} id={`company-${companyIdx}`} style={{ marginBottom: "40px" }}>
                   <h3 style={{ fontSize: "16px", fontWeight: "700", marginBottom: "16px", color: "var(--text)", paddingBottom: "8px", borderBottom: "2px solid var(--accent)" }}>
@@ -627,7 +627,7 @@ function PlacementActivity() {
 
                           {/* Apply Button */}
                           <button
-                            onClick={() => applyToJob(job._id)}
+                            onClick={() => applyToJob(job.id)}
                             style={{
                               marginTop: "auto",
                               padding: "8px 16px",
@@ -679,13 +679,12 @@ function PlacementActivity() {
   };
 
   return (
-    <div style={{
-      minHeight: "100vh",
-      background: "var(--bg)",
-      color: "var(--text)",
-      padding: "40px 20px",
-      transition: "background-color 0.3s ease"
-    }}>
+    <div className="home-wrapper">
+      <div style={{
+        minHeight: "100vh",
+        padding: "40px 20px",
+        transition: "background-color 0.3s ease"
+      }}>
       <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
         <div style={{ marginBottom: "40px" }}>
           <h1 style={{ margin: "0 0 8px 0", fontSize: "42px", fontWeight: "800", background: "linear-gradient(135deg, var(--accent) 0%, #8b5cf6 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>Explore Opportunities</h1>
@@ -719,8 +718,8 @@ function PlacementActivity() {
             marginBottom: "40px"
           }}>
             {statsCards.map((card, i) => (
-              <div 
-                key={i} 
+              <div
+                key={i}
                 style={{
                   background: "var(--card)",
                   borderRadius: "12px",
@@ -891,7 +890,7 @@ function PlacementActivity() {
                 color: "var(--muted)",
                 lineHeight: "1.6"
               }}>Register or login to view job opportunities, apply to companies, and track your career progress</p>
-              
+
               <div style={{ display: "flex", gap: "12px", justifyContent: "center", flexWrap: "wrap" }}>
                 <button
                   onClick={() => window.location.href = "/login"}
@@ -949,7 +948,7 @@ function PlacementActivity() {
                   Register / Sign Up
                 </button>
               </div>
-              
+
               <div style={{
                 marginTop: "32px",
                 paddingTop: "24px",
@@ -998,6 +997,7 @@ function PlacementActivity() {
           </div>
         )}
       </div>
+    </div>
     </div>
   );
 }

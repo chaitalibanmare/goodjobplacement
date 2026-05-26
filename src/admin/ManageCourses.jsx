@@ -31,7 +31,7 @@ export default function ManageCourses() {
 
   async function toggleStatus(id) {
     try {
-      await fetch(`http://localhost:5000/api/courses/approve/${id}`, {
+      await fetch(`http://localhost:5000/api/admin/course/${id}/toggle`, {
         method: "PUT",
       });
       fetchCourses();
@@ -126,7 +126,7 @@ export default function ManageCourses() {
 
               {currentCourses.map((c) => (
 
-                <tr key={c._id} style={{
+                <tr key={c.id} style={{
                   background: "white",
                   boxShadow: "0 6px 20px rgba(0,0,0,0.08)"
                 }}>
@@ -152,27 +152,27 @@ export default function ManageCourses() {
                   <td>₹{c.fees}</td>
 
                   <td>
-                    {new Date(c.startDate).toLocaleDateString()}
+                    {c.start_date ? new Date(c.start_date).toLocaleDateString() : "N/A"}
                   </td>
 
                   {/* STATUS */}
                   <td>
                     <span style={{
-                      background: c.isApproved ? "#dcfce7" : "#fef3c7",
-                      color: c.isApproved ? "#166534" : "#92400e",
+                      background: c.is_approved ? "#dcfce7" : "#fef3c7",
+                      color: c.is_approved ? "#166534" : "#92400e",
                       padding: "5px 10px",
                       borderRadius: "8px"
                     }}>
-                      {c.isApproved ? "Approved" : "Pending"}
+                      {c.is_approved ? "Approved" : "Pending"}
                     </span>
                   </td>
 
                   {/* ADMIN */}
                   <td>
                     <button
-                      onClick={() => toggleStatus(c._id)}
+                      onClick={() => toggleStatus(c.id)}
                       style={{
-                        background: c.isApproved ? "#ef4444" : "#10b981",
+                        background: c.is_approved ? "#ef4444" : "#10b981",
                         color: "white",
                         border: "none",
                         padding: "6px 14px",
@@ -180,7 +180,7 @@ export default function ManageCourses() {
                         cursor: "pointer"
                       }}
                     >
-                      {c.isApproved ? "Disable" : "Enable"}
+                      {c.is_approved ? "Disable" : "Enable"}
                     </button>
                   </td>
 

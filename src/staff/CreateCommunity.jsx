@@ -15,7 +15,9 @@ export default function CreateCommunity() {
   const [preview, setPreview] = useState("");
   const [showPreview, setShowPreview] = useState(false);
 
-  const userId = "staff123";
+  // GET REAL STAFF ID
+  const staff = JSON.parse(localStorage.getItem("staff") || "{}");
+  const userId = staff.id;
 
   // ================= LOAD DATA (EDIT MODE) =================
   useEffect(() => {

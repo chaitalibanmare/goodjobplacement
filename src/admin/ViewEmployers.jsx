@@ -22,7 +22,7 @@ export default function ViewEmployers() {
 
       const token = localStorage.getItem("gjp_token");
 
-      const res = await fetch("http://localhost:5000/api/user/employers", {
+      const res = await fetch("http://localhost:5000/api/user/all-employers", {
         headers: {
           Authorization: "Bearer " + token
         }
@@ -31,8 +31,9 @@ export default function ViewEmployers() {
       const data = await res.json();
 
       if (res.ok) {
-        setEmployers(data.employers || []);
-        setTotal(data.total || 0);
+        const arr = Array.isArray(data) ? data : (data.employers || []);
+        setEmployers(arr);
+        setTotal(data.total !== undefined ? data.total : arr.length);
       }
 
     } catch (err) {
@@ -113,14 +114,14 @@ export default function ViewEmployers() {
 
                 currentData.map((emp, index) => (
 
-                  <tr key={emp._id}>
+                  <tr key={emp.id}>
 
                     <td style={{ padding: "12px", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
                       {(currentPage - 1) * perPage + index + 1}
                     </td>
 
                     <td style={{ padding: "12px", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
-                      {emp.name}
+                      {emp.full_name || emp.name}
                     </td>
 
                     <td style={{ padding: "12px", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
@@ -128,7 +129,7 @@ export default function ViewEmployers() {
                     </td>
 
                     <td style={{ padding: "12px", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
-                      {emp.companyName || "Not Provided"}
+                      {(emp.employer_profiles && emp.employer_profiles.length > 0 ? emp.employer_profiles[0].company_name : emp.companyName) || "Not Provided"}
                     </td>
 
                     <td style={{ padding: "12px", borderTop: "1px solid rgba(255,255,255,0.05)" }}>

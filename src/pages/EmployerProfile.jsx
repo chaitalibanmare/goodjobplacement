@@ -31,10 +31,10 @@ export default function EmployerProfile() {
     if (data.profile) {
       setProfile(data.profile);
 
-      setCompanyName(data.profile.companyName || "");
+      setCompanyName(data.profile.company_name || data.profile.companyName || "");
       setEmail(data.profile.email || "");
       setContact(data.profile.contact || "");
-      setYears(data.profile.yearsCompleted || "");
+      setYears(data.profile.years_completed || data.profile.yearsCompleted || "");
       setAddress(data.profile.address || "");
     }
   }
@@ -60,7 +60,7 @@ export default function EmployerProfile() {
     if (logo) formData.append("logo", logo);
     if (companyImage) formData.append("companyImage", companyImage);
 
-    await fetch(base + "/api/employer/profile", {
+    const res = await fetch(base + "/api/employer/profile", {
       method: "POST",
       headers: {
         Authorization: "Bearer " + token
@@ -68,10 +68,15 @@ export default function EmployerProfile() {
       body: formData
     });
 
-    alert("Profile updated");
-
-    setEdit(false);
-    loadProfile();
+    if (res.ok) {
+      alert("Profile updated");
+      setEdit(false);
+      loadProfile();
+    } else {
+      const data = await res.json();
+      console.error("Backend Error Response:", data);
+      alert("Failed to update profile: " + JSON.stringify(data.fullError || data.details || data.message || "Server error"));
+    }
   }
 
   // ================= UI =================
@@ -87,25 +92,25 @@ export default function EmployerProfile() {
           <h2 className="profile-title">Company Profile</h2>
 
           <img
-            src={profile?.logo ? base + profile.logo : "/company.png"}
+            src={profile?.logo ? base + "/uploads/" + profile.logo : "/company.png"}
             className="company-logo"
             alt="Company Logo"
           />
 
           <h3 className="company-name">
-            {profile?.companyName || "Company Name"}
+            {profile?.company_name || profile?.companyName || "Company Name"}
           </h3>
 
           <div className="company-info">
             <p><b>Email:</b> {profile?.email || "-"}</p>
             <p><b>Phone:</b> {profile?.contact || "-"}</p>
-            <p><b>Years Completed:</b> {profile?.yearsCompleted || "-"}</p>
+            <p><b>Years Completed:</b> {profile?.years_completed || profile?.yearsCompleted || "-"}</p>
             <p><b>Address:</b> {profile?.address || "-"}</p>
           </div>
 
-          {profile?.companyImage && (
+          {(profile?.company_image || profile?.companyImage) && (
             <img
-              src={base + profile.companyImage}
+              src={base + "/uploads/" + (profile.company_image || profile.companyImage)}
               className="company-image"
               alt="Company"
             />

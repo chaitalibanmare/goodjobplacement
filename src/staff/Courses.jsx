@@ -15,9 +15,9 @@ const Courses = () => {
       .catch(err => console.error(err));
   }, []);
 
-  const total = courses.length;
-  const approved = courses.filter(c => c.isApproved).length;
-  const pending = courses.filter(c => !c.isApproved).length;
+  const total = Array.isArray(courses) ? courses.length : 0;
+  const approved = Array.isArray(courses) ? courses.filter(c => c.isApproved).length : 0;
+  const pending = Array.isArray(courses) ? courses.filter(c => !c.isApproved).length : 0;
 
   return (
     <div className="courses-dashboard">

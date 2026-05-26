@@ -1,7 +1,7 @@
 import React, { useState } from "react"
 import { useNavigate } from "react-router-dom"
 
-export default function AdminLogin() {
+export default function AdminLogin({ onLoginSuccess, setUser }) {
 
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -22,7 +22,14 @@ export default function AdminLogin() {
       if (data.user && data.user.role === "admin") {
         localStorage.setItem("gjp_token", data.token)
         localStorage.setItem("gjp_user", JSON.stringify(data.user))
-        navigate("/admin/dashboard")
+        
+        if (setUser) setUser(data.user); // Trigger full-screen swap
+        
+        if (onLoginSuccess) {
+          onLoginSuccess();
+        } else {
+          navigate("/admin/dashboard")
+        }
       } else {
         alert("You are not an admin")
       }

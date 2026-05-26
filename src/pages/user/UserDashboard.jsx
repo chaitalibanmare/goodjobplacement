@@ -1,93 +1,159 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link, useLocation } from "react-router-dom";
+import "./userDashboard.css";
 
 export default function UserDashboard() {
-
   const navigate = useNavigate();
+  const location = useLocation();
   const user = JSON.parse(localStorage.getItem("gjp_user"));
 
   return (
-    <main>
-      <section className="section">
-        <div className="container">
+    <main className="user-dashboard">
+      <div className="container" style={{ maxWidth: "1200px", margin: "0" }}>
+        
+        {/* HEADER */}
+        <div className="dashboard-header">
+          <div className="status-badge">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+              <polyline points="22 4 12 14.01 9 11.01"></polyline>
+            </svg>
+            CAREER PATH ACTIVE
+          </div>
+          <h2 className="dashboard-title">
+            Your career journey starts here, <span>{user?.name}</span> 🚀
+          </h2>
+          <p className="dashboard-subtitle">
+            Manage your skill-building, discover tailored vacancies, and track your professional growth in one central hub.
+          </p>
+        </div>
 
-          {/* HEADER */}
-          <div style={{ textAlign: "center", marginBottom: "30px" }}>
-  <h2>
-    Your career journey starts here,{" "}
-    <span style={{ color: "#6C3EF4" }}>{user?.name}</span> 🚀
-  </h2>
-</div>
+        {/* QUICK ACCESS */}
+        <div className="quick-access-header">
+          <h3>Quick Access</h3>
+          <Link to="#" className="view-insights">
+            View all insights 
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+              <polyline points="12 5 19 12 12 19"></polyline>
+            </svg>
+          </Link>
+        </div>
 
-          {/* GRID SAME AS ADMIN */}
-          <div className="grid">
+        {/* GRID */}
+        <div className="dashboard-grid">
 
-            {/* VACANCIES */}
-            <div className="card">
-              <h3>Vacancies</h3>
-              <p className="muted">Discover jobs tailored for you</p>
-              <button
-                className="btn primary"
-                onClick={() => navigate("/user/vacancies")}
-              >
-                Vacancies
+          {/* VACANCIES */}
+          <div className="dashboard-card card-vacancies">
+            <div className="card-icon icon-purple">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+              </svg>
+            </div>
+            <h4>Vacancies</h4>
+            <p className="desc">Explore 240+ job openings curated specifically for your skill profile.</p>
+            <div className="card-footer">
+              <button className="btn-primary" onClick={() => navigate("/user/vacancies")}>
+                Discover Jobs
+              </button>
+              <span className="card-footer-text">12 New today</span>
+            </div>
+          </div>
+
+          {/* COURSES */}
+          <div className="dashboard-card card-courses">
+            <div className="card-icon icon-purple">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M22 10v6M2 10l10-5 10 5-10 5z"></path>
+                <path d="M6 12v5c3 3 9 3 12 0v-5"></path>
+              </svg>
+            </div>
+            <h4>Courses</h4>
+            <p className="desc">Bridge your skill gaps with industry-recognized certificates.</p>
+            <div className="card-footer" style={{ marginTop: "auto" }}>
+              <button className="btn-secondary" onClick={() => navigate("/courses")}>
+                Explore Library
               </button>
             </div>
+          </div>
 
-            {/* COURSES */}
-            <div className="card">
-              <h3>Courses</h3>
-              <p className="muted">Upgrade your skills with top courses</p>
-              <button
-                className="btn primary"
-                onClick={() => navigate("/courses")}
-              >
-                Courses
-              </button>
+          {/* MY COURSES */}
+          <div className="dashboard-card card-mycourses">
+            <div className="card-icon icon-purple">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+              </svg>
             </div>
-
-            {/* PLACEMENT */}
-            <div className="card">
-              <h3>Placement Activity</h3>
-              <p className="muted">Track your applications and offers</p>
-              <button
-                className="btn primary"
-                onClick={() => navigate("/placement-activity")}
-              >
-                Placement Activity
-              </button>
+            <h4>My Courses</h4>
+            <p className="desc">Resume your "Full-Stack System Design" course where you left off.</p>
+            <div className="progress-container">
+              <div className="progress-bar">
+                <div className="progress-fill" style={{ width: "65%" }}></div>
+              </div>
+              <span className="progress-text">65% Completed</span>
             </div>
+            <button className="btn-outline btn-full" onClick={() => navigate("/my-courses")}>
+              Continue
+            </button>
+          </div>
 
-            {/* COMMUNITY */}
-            <div className="card">
-              <h3>Community</h3>
-              <p className="muted">Connect with like-minded learners</p>
-              <button
-                className="btn primary"
-                onClick={() => navigate("/community")}
-              >
-                Community
-              </button>
+          {/* COMMUNITY */}
+          <div className="dashboard-card card-community">
+            <div className="card-header-flex">
+              <div className="card-icon icon-blue">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="9" cy="7" r="4"></circle>
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
+              </div>
+              <div className="avatars">
+                <div className="avatar" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=64&h=64')" }}></div>
+                <div className="avatar" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=64&h=64')" }}></div>
+                <div className="avatar" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=64&h=64')" }}></div>
+              </div>
             </div>
+            <h4>Community</h4>
+            <p className="desc">Collaborate with 15,000+ peers and get feedback on your portfolio.</p>
+            <button className="btn-primary btn-full" onClick={() => navigate("/community")}>
+              Join Discussion
+            </button>
+          </div>
 
-            {/* MY COURSES */}
-            <div className="card">
-              <h3>My Courses</h3>
-              <p className="muted">Continue your learning journey</p>
-              <button
-                className="btn primary"
-                onClick={() => navigate("/my-courses")}
-              >
-                My Courses
-              </button>
+          {/* PLACEMENT ACTIVITY */}
+          <div className="dashboard-card card-placement">
+            <div className="card-icon icon-red">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="20" x2="18" y2="10"></line>
+                <line x1="12" y1="20" x2="12" y2="4"></line>
+                <line x1="6" y1="20" x2="6" y2="14"></line>
+              </svg>
             </div>
-
-            
-
+            <h4>Placement Activity</h4>
+            <div className="stats-grid">
+              <div className="stat-box">
+                <div className="stat-value">14</div>
+                <div className="stat-label">Applied</div>
+              </div>
+              <div className="stat-box">
+                <div className="stat-value">3</div>
+                <div className="stat-label">Interviews</div>
+              </div>
+              <div className="stat-box">
+                <div className="stat-value">1</div>
+                <div className="stat-label">Offers</div>
+              </div>
+            </div>
+            <button className="btn-secondary btn-full" style={{ background: "#E6F0FF", color: "#3b82f6" }} onClick={() => navigate("/placement-activity")}>
+              Track Status
+            </button>
           </div>
 
         </div>
-      </section>
+      </div>
     </main>
   );
-}
+}

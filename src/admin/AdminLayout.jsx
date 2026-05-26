@@ -1,27 +1,72 @@
-import React, { useEffect } from "react";
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+
+// Import sub-components for internal navigation
+import Dashboard from "./Dashboard";
+import Users from "./Users";
+import ViewEmployers from "./ViewEmployers";
+import ManageCourses from "./ManageCourses";
+import ManageVacancies from "./ManageVacancies";
+import PlacementActivity from "../pages/PlacementActivity";
+import UserProfile from "./UserProfile";
+import StaffList from "./StaffList";
+import ManageCommunities from "./ManageCommunities";
+import ManagePayments from "./ManagePayments";
 
 export default function AdminLayout() {
-
+  const [view, setView] = useState("dashboard");
+  const [selectedId, setSelectedId] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
     const token = localStorage.getItem("gjp_token");
-
-    if (!token) {
-      navigate("/admin");
+    const user = JSON.parse(localStorage.getItem("gjp_user") || "{}");
+    if (!token || user.role !== "admin") {
+      // If session is lost or not admin, go back to home
+      window.location.href = "/";
     }
   }, []);
 
   function logout() {
     localStorage.removeItem("gjp_token");
     localStorage.removeItem("gjp_user");
-
-    navigate("/admin", { replace: true });
+    window.location.href = "/";
   }
 
+  const navigateTo = (newView, id = null) => {
+    setView(newView);
+    if (id) setSelectedId(id);
+  };
+
+  const renderContent = () => {
+    switch (view) {
+      case "dashboard":
+        return <Dashboard navigateTo={navigateTo} />;
+      case "users":
+        return <Users navigateTo={navigateTo} />;
+      case "employers":
+        return <ViewEmployers navigateTo={navigateTo} />;
+      case "courses":
+        return <ManageCourses navigateTo={navigateTo} />;
+      case "vacancies":
+        return <ManageVacancies navigateTo={navigateTo} />;
+      case "activity":
+        return <PlacementActivity navigateTo={navigateTo} />;
+      case "staff":
+        return <StaffList navigateTo={navigateTo} />;
+      case "community":
+        return <ManageCommunities navigateTo={navigateTo} />;
+      case "payments":
+        return <ManagePayments navigateTo={navigateTo} />;
+      case "userProfile":
+        return <UserProfile id={selectedId} navigateTo={navigateTo} />;
+      default:
+        return <Dashboard navigateTo={navigateTo} />;
+    }
+  };
+
   return (
-    <div style={{ display: "flex", height: "100vh" }}>
+    <div style={{ display: "flex", height: "100vh", width: "100vw", position: "fixed", top: 0, left: 0, zIndex: 2000, background: "#f8fafc" }}>
 
       {/* SIDEBAR */}
       <div
@@ -32,55 +77,61 @@ export default function AdminLayout() {
           padding: "20px",
           display: "flex",
           flexDirection: "column",
-          gap: "20px",
+          gap: "10px",
+          height: "100%"
         }}
       >
-        <h2 style={{ fontSize: "20px" }}>
+        <h2 style={{ fontSize: "20px", marginBottom: "20px" }}>
           GoodJobPlacement<span style={{ color: "#7c3aed" }}>.com</span>
         </h2>
 
-        <NavLink to="/admin/dashboard" style={linkStyle}>
+        <button onClick={() => setView("dashboard")} style={view === "dashboard" ? activeLinkStyle : linkStyle}>
           Dashboard
-        </NavLink>
+        </button>
 
-        <NavLink to="/admin/users" style={linkStyle}>
+        <button onClick={() => setView("users")} style={view === "users" ? activeLinkStyle : linkStyle}>
           Manage Users
-        </NavLink>
+        </button>
 
-        <NavLink to="/admin/staff" style={linkStyle}>
+        <button onClick={() => setView("staff")} style={view === "staff" ? activeLinkStyle : linkStyle}>
           Manage Staff
-        </NavLink>
+        </button>
 
-        <NavLink to="/admin/employers" style={linkStyle}>
-        View Employer
-        </NavLink>
+        <button onClick={() => setView("employers")} style={view === "employers" ? activeLinkStyle : linkStyle}>
+          View Employer
+        </button>
 
-        <NavLink to="/admin/vacancies" style={linkStyle}>
+        <button onClick={() => setView("vacancies")} style={view === "vacancies" ? activeLinkStyle : linkStyle}>
           Manage Vacancies
-        </NavLink>
+        </button>
 
-        <NavLink to="/admin/courses" style={linkStyle}>
+        <button onClick={() => setView("courses")} style={view === "courses" ? activeLinkStyle : linkStyle}>
           Manage Courses
-        </NavLink>
+        </button>
 
-        <NavLink to="/admin/activity" style={linkStyle}>
+        <button onClick={() => setView("activity")} style={view === "activity" ? activeLinkStyle : linkStyle}>
           Placement Activity
-        </NavLink>
+        </button>
 
-        <NavLink to="/admin/community" style={linkStyle}>
+        <button onClick={() => setView("community")} style={view === "community" ? activeLinkStyle : linkStyle}>
           Manage Communities
-        </NavLink>
+        </button>
+
+        <button onClick={() => setView("payments")} style={view === "payments" ? activeLinkStyle : linkStyle}>
+          Course Enrollments
+        </button>
 
         <button
           onClick={logout}
           style={{
             marginTop: "auto",
-            padding: "10px",
+            padding: "12px",
             border: "none",
             background: "#ef4444",
             color: "white",
-            borderRadius: "6px",
+            borderRadius: "8px",
             cursor: "pointer",
+            fontWeight: "bold"
           }}
         >
           Logout
@@ -89,23 +140,36 @@ export default function AdminLayout() {
 
       {/* PAGE CONTENT */}
       <div
-  style={{
-    flex: 1,
-    padding: "5px 10px",
-    background: "#f8fafc",
-    overflowY: "auto"
-  }}
->
-  <Outlet />
-</div>
+        style={{
+          flex: 1,
+          padding: "20px",
+          background: "#f8fafc",
+          overflowY: "auto",
+          height: "100%"
+        }}
+      >
+        {renderContent()}
+      </div>
     </div>
   );
 }
 
 const linkStyle = {
   textDecoration: "none",
+  color: "#94a3b8",
+  padding: "12px",
+  borderRadius: "8px",
+  background: "transparent",
+  border: "none",
+  textAlign: "left",
+  cursor: "pointer",
+  fontSize: "14px",
+  transition: "all 0.2s"
+};
+
+const activeLinkStyle = {
+  ...linkStyle,
   color: "white",
-  padding: "10px",
-  borderRadius: "6px",
   background: "#1e293b",
+  fontWeight: "bold"
 };

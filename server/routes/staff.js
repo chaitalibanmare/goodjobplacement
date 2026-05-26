@@ -1,10 +1,10 @@
 const express = require("express");
 const router = express.Router();
-const Staff = require("../models/Staff");
+const supabase = require("../supabaseClient"); // ✅ Added Supabase
 
 console.log("✅ STAFF ROUTE FILE LOADED");
 
-// 👉 TEST ROUTE (IMPORTANT)
+// 👉 TEST ROUTE
 router.get("/test", (req, res) => {
   res.send("STAFF ROUTE WORKING");
 });
@@ -14,17 +14,28 @@ router.post("/register", async (req, res) => {
   try {
     const { name, email, password } = req.body;
 
-    const existing = await Staff.findOne({ email });
+    // Check if staff already exists in Supabase
+    const { data: existing } = await supabase
+      .from('staff')
+      .select('email')
+      .eq('email', email)
+      .single()
+
     if (existing) {
       return res.status(400).json({ message: "Staff already exists" });
     }
 
-    const staff = new Staff({ name, email, password });
-    await staff.save();
+    // Save to Supabase
+    const { error } = await supabase
+      .from('staff')
+      .insert([{ name, email, password }])
+
+    if (error) throw error
 
     res.json({ message: "Registered successfully" });
 
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: "Error registering staff" });
   }
 });
@@ -34,9 +45,16 @@ router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    const staff = await Staff.findOne({ email, password });
+    // Find staff in Supabase
+    const { data: staff, error } = await supabase
+      .from('staff')
+      .select('*')
+      .eq('email', email)
+      .eq('password', password)
+      .single()
 
-    if (!staff) {
+    if (error || !staff) {
+      console.error("Login Error:", error || "Staff not found");
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
@@ -46,6 +64,7 @@ router.post("/login", async (req, res) => {
     });
 
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: "Login error" });
   }
 });
@@ -53,9 +72,14 @@ router.post("/login", async (req, res) => {
 // 👉 GET ALL STAFF
 router.get("/all", async (req, res) => {
   try {
-    const staff = await Staff.find().select("name email");
-    res.json(staff);
+    const { data, error } = await supabase
+      .from('staff')
+      .select("name, email")
+
+    if (error) throw error
+    res.json(data);
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: "Error fetching staff" });
   }
 });

@@ -104,11 +104,10 @@ export default function Profile({ setUser }) {
       if (data.user) {
         setLocalUser(data.user)
 
-        const p = data.user.profile || {}
-        setFullName(p.fullName || data.user.name || '')
-        setQualifications(p.qualifications || '')
-        setExperience(p.experience || '')
-        setPhotoPreview(p.photo ? base + p.photo : null)
+        setFullName(data.user.full_name || data.user.name || '')
+        setQualifications(data.user.qualifications || '')
+        setExperience(data.user.experience || '')
+        setPhotoPreview(data.user.photo ? `${base}/uploads/${data.user.photo}` : null)
       }
 
       setLoading(false)
@@ -136,13 +135,24 @@ export default function Profile({ setUser }) {
 
     const data = await res.json()
 
-    alert("Profile Updated ✅")
-
-    setLocalUser(data.user)
-    localStorage.setItem("gjp_user", JSON.stringify(data.user))
-
-    setEditMode(false)
-    window.location.reload()
+    if (res.ok && data.user) {
+      alert("Profile Updated ✅")
+      
+      // ✅ Update local state
+      setLocalUser(data.user)
+      
+      // ✅ Update localStorage
+      localStorage.setItem("gjp_user", JSON.stringify(data.user))
+      
+      // ✅ Update global App state (IMPORTANT)
+      if (setUser) {
+        setUser(data.user);
+      }
+      
+      setEditMode(false)
+    } else {
+      alert(data.error || "Update failed")
+    }
   }
 
   if (loading) return <div style={{ padding: 20 }}>Loading...</div>
@@ -165,8 +175,8 @@ export default function Profile({ setUser }) {
 
             <img
               src={
-                localUser?.profile?.photo
-                  ? `http://localhost:5000${localUser.profile.photo}`
+                localUser?.photo
+                  ? `http://localhost:5000/uploads/${localUser.photo}`
                   : "https://cdn-icons-png.flaticon.com/512/149/149071.png"
               }
               alt="profile"
@@ -186,7 +196,7 @@ export default function Profile({ setUser }) {
             <p><b>Qualification:</b> {qualifications}</p>
             <p><b>Experience:</b> {experience}</p>
 
-            {localUser.profile?.resume && (
+            {localUser.resume && (
               <button
                 onClick={() => setShowResume(true)}
                 style={{ ...primaryBtn, marginTop: "10px" }}
@@ -300,7 +310,7 @@ export default function Profile({ setUser }) {
             <span style={modalStyles.close} onClick={() => setShowResume(false)}>✖</span>
 
             <iframe
-              src={`http://localhost:5000/api/user/resume/${localUser.profile.resume.split("/").pop()}`}
+              src={`http://localhost:5000/resume/${localUser.resume}`}
               style={modalStyles.iframe}
               title="Resume"
             />

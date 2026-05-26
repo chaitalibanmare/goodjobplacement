@@ -11,7 +11,7 @@ export default function UserCommunityDetails() {
   const [showMembers, setShowMembers] = useState(false);
 
   const user = JSON.parse(localStorage.getItem("gjp_user"));
-  const userId = user?._id;
+  const userId = user?.id;
 
   // ================= TIME FORMAT =================
   const formatTime = (date) => {
@@ -39,32 +39,32 @@ export default function UserCommunityDetails() {
   };
 
   // ================= FETCH DATA =================
- useEffect(() => {
-  const fetchCommunity = async () => {
-    try {
-      const res = await fetch(
-        `http://localhost:5000/api/community/details/${id}/${userId}`
-      );
+  useEffect(() => {
+    const fetchCommunity = async () => {
+      try {
+        const res = await fetch(
+          `http://localhost:5000/api/community/${id}`
+        );
 
-      if (!res.ok) {
-        throw new Error("API failed");
+        if (!res.ok) {
+          throw new Error("API failed");
+        }
+
+        const data = await res.json();
+        console.log("COMMUNITY DATA:", data); // 🔥 DEBUG
+
+        setCommunity(data);
+      } catch (err) {
+        console.error("ERROR FETCHING COMMUNITY:", err);
       }
+    };
 
-      const data = await res.json();
-      console.log("COMMUNITY DATA:", data); // 🔥 DEBUG
+    fetchCommunity();
 
-      setCommunity(data.community);
-    } catch (err) {
-      console.error("ERROR FETCHING COMMUNITY:", err);
-    }
-  };
-
-  fetchCommunity();
-
-  fetch(`http://localhost:5000/api/posts/${id}`)
-    .then((res) => res.json())
-    .then((data) => setPosts(data));
-}, [id]);
+    fetch(`http://localhost:5000/api/posts/community/${id}`)
+      .then((res) => res.json())
+      .then((data) => setPosts(data));
+  }, [id]);
   // ================= FETCH MEMBERS =================
   const fetchMembers = async () => {
     try {
@@ -80,97 +80,97 @@ export default function UserCommunityDetails() {
 
   // ================= EXIT =================
   const handleExit = async () => {
-  const confirmExit = window.confirm("Leave this community?");
-  if (!confirmExit) return;
+    const confirmExit = window.confirm("Leave this community?");
+    if (!confirmExit) return;
 
-  try {
-    await fetch(`http://localhost:5000/api/community/leave/${id}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ userId }),
-    });
-
-    // ✅ FORCE CLEAN NAVIGATION + REFRESH
-    navigate("/user/community");
-    
-    // optional but powerful
-    window.location.reload();
-
-  } catch (err) {
-    console.error(err);
-  }
-};
-  // ================= REACTION =================
-  const handleReaction = async (postId, emoji) => {
-  setPosts((prev) =>
-    prev.map((p) => {
-      if (p._id !== postId) return p;
-
-      let newReactions = { ...p.reactions };
-
-      let alreadyReacted = false;
-
-      // 🔥 REMOVE user from all emojis
-      Object.keys(newReactions).forEach((key) => {
-        if (newReactions[key]?.includes(userId)) {
-          if (key === emoji) {
-            alreadyReacted = true; // same emoji clicked
-          }
-          newReactions[key] = newReactions[key].filter(
-            (id) => id !== userId
-          );
-        }
+    try {
+      await fetch(`http://localhost:5000/api/community/leave/${id}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ userId }),
       });
 
-      // ✅ ADD only if NOT same emoji
-      if (!alreadyReacted) {
-        newReactions[emoji] = [
-          ...(newReactions[emoji] || []),
-          userId,
-        ];
-      }
+      // ✅ FORCE CLEAN NAVIGATION + REFRESH
+      navigate("/user/community");
 
-      return {
-        ...p,
-        reactions: newReactions,
-      };
-    })
-  );
+      // optional but powerful
+      window.location.reload();
 
-  // API call
-  try {
-    await fetch(`http://localhost:5000/api/posts/react/${postId}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ userId, emoji }),
-    });
-  } catch (err) {
-    console.error(err);
-  }
-};
+    } catch (err) {
+      console.error(err);
+    }
+  };
+  // ================= REACTION =================
+  const handleReaction = async (postId, emoji) => {
+    setPosts((prev) =>
+      prev.map((p) => {
+        if (p.id !== postId) return p;
+
+        let newReactions = { ...p.reactions };
+
+        let alreadyReacted = false;
+
+        // 🔥 REMOVE user from all emojis
+        Object.keys(newReactions).forEach((key) => {
+          if (newReactions[key]?.includes(userId)) {
+            if (key === emoji) {
+              alreadyReacted = true; // same emoji clicked
+            }
+            newReactions[key] = newReactions[key].filter(
+              (id) => id !== userId
+            );
+          }
+        });
+
+        // ✅ ADD only if NOT same emoji
+        if (!alreadyReacted) {
+          newReactions[emoji] = [
+            ...(newReactions[emoji] || []),
+            userId,
+          ];
+        }
+
+        return {
+          ...p,
+          reactions: newReactions,
+        };
+      })
+    );
+
+    // API call
+    try {
+      await fetch(`http://localhost:5000/api/posts/react/${postId}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ userId, emoji }),
+      });
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   // ================= GROUP POSTS =================
   const sortedPosts = [...posts].reverse();
 
-const groupedPosts = [];
-sortedPosts.forEach((p, index) => {
-  const current = formatDateLabel(p.createdAt);
+  const groupedPosts = [];
+  sortedPosts.forEach((p, index) => {
+    const current = formatDateLabel(p.created_at);
 
-  const prev =
-    index > 0
-      ? formatDateLabel(sortedPosts[index - 1].createdAt)
-      : null;
+    const prev =
+      index > 0
+        ? formatDateLabel(sortedPosts[index - 1].created_at)
+        : null;
 
-  if (current !== prev) {
-    groupedPosts.push({ type: "date", label: current });
-  }
+    if (current !== prev) {
+      groupedPosts.push({ type: "date", label: current });
+    }
 
-  groupedPosts.push({ type: "post", data: p });
-});
+    groupedPosts.push({ type: "post", data: p });
+  });
 
   return (
     <div style={{ background: "#f5f7fb", minHeight: "100vh", padding: "30px 0" }}>
@@ -198,15 +198,15 @@ sortedPosts.forEach((p, index) => {
             alignItems: "center",
             cursor: "pointer",
           }}
-        onClick={() => {
-          setShowMembers(prev => !prev);
-          fetchMembers();
-        }}
+          onClick={() => {
+            setShowMembers(prev => !prev);
+            fetchMembers();
+          }}
         >
           <div>
             <h3 style={{ margin: 0 }}>{community?.name}</h3>
             <small>
-              {(community?.members || []).filter(m => m).length} members
+              {(community?.community_members || []).length} members
             </small>
           </div>
 
@@ -245,9 +245,14 @@ sortedPosts.forEach((p, index) => {
             {members.length === 0 ? (
               <p>No members</p>
             ) : (
-              members.map((m) => (
-                <div key={m._id}>
-                  👤 {m.name} ({m.email})
+              members.map((m, i) => (
+                <div key={m.id || i} style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
+                  <img
+                    src={m.photo ? `http://localhost:5000/uploads/${m.photo}` : `https://ui-avatars.com/api/?name=${m.name || 'User'}&background=random`}
+                    alt={m.name}
+                    style={{ width: "32px", height: "32px", borderRadius: "50%", objectFit: "cover" }}
+                  />
+                  <span>{m.name}</span>
                 </div>
               ))
             )}
@@ -294,9 +299,9 @@ sortedPosts.forEach((p, index) => {
 
             return (
               <div
-                key={p._id}
+                key={p.id}
                 style={{
-                   position: "relative",
+                  position: "relative",
                   background: "#fff",
                   padding: "15px",
                   borderRadius: "10px",
@@ -307,36 +312,38 @@ sortedPosts.forEach((p, index) => {
 
                 {p.image && (
                   <img
-                    src={`http://localhost:5000/uploads/${p.image}`}
+                    src={`http://localhost:5000${p.image}`}
                     alt=""
                     style={{
                       width: "100%",
+                      maxHeight: "350px",
+                      objectFit: "cover",
                       borderRadius: "8px",
                       marginBottom: "10px",
                     }}
                   />
                 )}
                 {/* ✅ PUT HERE */}
-{userReaction && (
-  <div
-    style={{
-      position: "absolute",
-      bottom: "8px",
-      right: "10px",
-      background: "#fff",
-      borderRadius: "20px",
-      padding: "2px 6px",
-      fontSize: "14px",
-      boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
-    }}
-  >
-    {userReaction}
-  </div>
-)}
+                {userReaction && (
+                  <div
+                    style={{
+                      position: "absolute",
+                      bottom: "8px",
+                      right: "10px",
+                      background: "#fff",
+                      borderRadius: "20px",
+                      padding: "2px 6px",
+                      fontSize: "14px",
+                      boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
+                    }}
+                  >
+                    {userReaction}
+                  </div>
+                )}
 
                 <div style={{ display: "flex", justifyContent: "flex-end" }}>
                   <small style={{ fontSize: "11px", color: "#666" }}>
-                    {formatTime(p.createdAt)}
+                    {formatTime(p.created_at)}
                   </small>
                 </div>
 
@@ -357,7 +364,7 @@ sortedPosts.forEach((p, index) => {
                     return (
                       <span
                         key={emoji}
-                        onClick={() => handleReaction(p._id, emoji)}
+                        onClick={() => handleReaction(p.id, emoji)}
                         style={{
                           cursor: "pointer",
                           padding: "6px 10px",

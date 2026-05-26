@@ -1,96 +1,98 @@
 const express = require("express")
 const router = express.Router()
-const EmployerProfile = require("../models/EmployerProfile")
+const supabase = require("../supabaseClient") // ✅ Added Supabase
 const auth = require("../middleware/auth")
 const multer = require("multer")
 
 const storage = multer.diskStorage({
-destination:"uploads/",
-filename:(req,file,cb)=>{
-cb(null,Date.now()+"-"+file.originalname)
-}
+  destination: "uploads/",
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + "-" + file.originalname)
+  }
 })
 
-const upload = multer({storage})
-
+const upload = multer({ storage })
 
 // GET PROFILE
-router.get("/profile",auth,async(req,res)=>{
+router.get("/profile", auth, async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('employer_profiles')
+      .select('*')
+      .eq('user_id', req.user.id)
+      .maybeSingle()
 
-try{
-
-const userId = req.user._id
-
-const profile = await EmployerProfile.findOne({userId})
-
-res.json({profile})
-
-}catch(err){
-res.status(500).json({message:"Server error"})
-}
-
+    if (error) throw error
+    res.json({ profile: data || null })
+  } catch (err) {
+    console.error(err)
+    res.status(500).json({ message: "Server error" })
+  }
 })
-
 
 // SAVE / UPDATE PROFILE
 router.post(
-"/profile",
-auth,
-upload.fields([
-{ name:"logo", maxCount:1 },
-{ name:"companyImage", maxCount:1 }
-]),
-async(req,res)=>{
+  "/profile",
+  auth,
+  upload.fields([{ name: "logo" }, { name: "companyImage" }]),
+  async (req, res) => {
+    try {
+      const { companyName, email, contact, yearsCompleted, address } = req.body;
+      
+      const updateData = {
+        user_id: req.user.id,
+        company_name: companyName,
+        email: email,
+        contact: contact,
+        years_completed: parseInt(yearsCompleted) || 0,
+        address: address
+      }
 
-try{
+      // Add file paths if they were uploaded
+      if (req.files && req.files.logo) updateData.logo = req.files.logo[0].filename
+      if (req.files && req.files.companyImage) updateData.company_image = req.files.companyImage[0].filename
 
-const userId = req.user._id
+      // Check if profile exists first
+      const { data: existingProfile, error: fetchError } = await supabase
+        .from('employer_profiles')
+        .select('id')
+        .eq('user_id', req.user.id)
+        .maybeSingle();
 
-let profile = await EmployerProfile.findOne({userId})
+      if (fetchError) throw fetchError;
 
-const data = {
-companyName:req.body.companyName,
-email:req.body.email,
-contact:req.body.contact,
-yearsCompleted:req.body.yearsCompleted,
-address:req.body.address
-}
+      let data, error;
+      if (existingProfile) {
+        const result = await supabase
+          .from('employer_profiles')
+          .update(updateData)
+          .eq('user_id', req.user.id)
+          .select();
+        data = result.data;
+        error = result.error;
+      } else {
+        const result = await supabase
+          .from('employer_profiles')
+          .insert([updateData])
+          .select();
+        data = result.data;
+        error = result.error;
+      }
 
-if(req.files && req.files.logo){
-data.logo = "/uploads/" + req.files.logo[0].filename
-}
+      if (error) {
+        console.error("Supabase Error:", error);
+        throw error;
+      }
 
-if(req.files && req.files.companyImage){
-data.companyImage = "/uploads/" + req.files.companyImage[0].filename
-}
-
-if(profile){
-
-await EmployerProfile.updateOne(
-{userId},
-{$set:data}
+      res.json({ 
+        message: "Profile saved", 
+        profile: (data && data.length > 0) ? data[0] : null 
+      })
+    } catch (err) {
+      console.error("Catch Block Error:", err);
+      res.status(500).json({ message: "Server error", details: err.message, fullError: err });
+    }
+  }
 )
-
-}else{
-
-await EmployerProfile.create({
-userId,
-...data
-})
-
-}
-
-const updated = await EmployerProfile.findOne({userId})
-
-res.json({message:"Profile saved",profile:updated})
-
-}catch(err){
-
-console.log(err)
-res.status(500).json({message:"Server error"})
-
-}
-
-})
 
 module.exports = router

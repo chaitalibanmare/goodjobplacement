@@ -1,261 +1,253 @@
 const express = require("express");
 const router = express.Router();
-const Community = require("../models/Community");
-
+const supabase = require("../supabaseClient");
 const multer = require("multer");
 const path = require("path");
 
-// ================= MULTER CONFIG =================
 const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, "uploads/");
-  },
-  filename: function (req, file, cb) {
+  destination: "uploads/",
+  filename: (req, file, cb) => {
     cb(null, Date.now() + path.extname(file.originalname));
   },
 });
-
 const upload = multer({ storage });
 
-// ================= CREATE COMMUNITY =================
+// CREATE COMMUNITY
 router.post("/create", upload.single("image"), async (req, res) => {
   try {
     const { name, description, category, userId } = req.body;
+    const { data, error } = await supabase
+      .from('communities')
+      .insert([{
+        name,
+        description,
+        category,
+        created_by: userId,
+        image: req.file ? `/uploads/${req.file.filename}` : ""
+      }])
+      .select()
 
-    const community = new Community({
-      name,
-      description,
-      category,
-      createdBy: userId,
-      isApproved: false,
-      members: [], // 👈 important
-      image: req.file ? `/uploads/${req.file.filename}` : "",
-    });
-
-    await community.save();
-
-    res.json({ message: "Community created", community });
-
+    if (error) throw error
+    res.json({ message: "Community created", community: data[0] });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// ================= STAFF VIEW =================
+// GET MY COMMUNITIES (STAFF)
 router.get("/my/:userId", async (req, res) => {
-  const data = await Community.find({ createdBy: req.params.userId });
-  res.json(data);
-});
-
-// ================= ADMIN GET ALL =================
-router.get("/all", async (req, res) => {
-  const data = await Community.find().sort({ createdAt: -1 });
-  res.json(data);
-});
-
-// ================= ADMIN APPROVE =================
-router.put("/approve/:id", async (req, res) => {
   try {
-    const community = await Community.findById(req.params.id);
+    const { data: communities, error } = await supabase
+      .from('communities')
+      .select('*')
+      .eq('created_by', req.params.userId)
+      .order('created_at', { ascending: false });
 
-    if (!community) {
-      return res.status(404).json({ message: "Community not found" });
-    }
+    if (error) throw error;
 
-    community.isApproved = !community.isApproved;
-    await community.save();
+    const { data: members, error: memError } = await supabase
+      .from('community_members')
+      .select('community_id, user_id');
 
-    res.json({
-      message: "Community updated",
-      isApproved: community.isApproved,
-    });
+    if (memError) throw memError;
 
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+    const data = communities.map(c => ({
+      ...c,
+      community_members: members.filter(m => m.community_id === c.id)
+    }));
 
-// ================= GET APPROVED =================
-router.get("/approved", async (req, res) => {
-  try {
-    const data = await Community.find({ isApproved: true });
     res.json(data);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// ================= GET SINGLE + MEMBER CHECK 🔥 =================
-router.get("/details/:id/:userId", async (req, res) => {
+// UPDATE COMMUNITY
+router.put("/update/:id", upload.single("image"), async (req, res) => {
   try {
-    const { id, userId } = req.params;
+    const { name, description, category } = req.body;
+    const updateData = { name, description, category };
 
-    const community = await Community.findById(id);
-
-    if (!community) {
-      return res.status(404).json({ message: "Community not found" });
+    if (req.file) {
+      updateData.image = `/uploads/${req.file.filename}`;
     }
 
-    const isMember = community.members.some(
-      (m) => m.toString() === userId
-    );
+    const { data, error } = await supabase
+      .from('communities')
+      .update(updateData)
+      .eq('id', req.params.id)
+      .select();
 
-    res.json({
-      community,
-      isMember,
-    });
-
+    if (error) throw error;
+    res.json({ message: "Community updated", community: data[0] });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// ================= JOIN COMMUNITY =================
+// DELETE COMMUNITY
+router.delete("/delete/:id", async (req, res) => {
+  try {
+    const { error } = await supabase
+      .from('communities')
+      .delete()
+      .eq('id', req.params.id);
+
+    if (error) throw error;
+    res.json({ message: "Community deleted" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET ALL APPROVED (FOR USERS)
+router.get("/approved", async (req, res) => {
+  try {
+    const { data: communities, error } = await supabase
+      .from('communities')
+      .select('*')
+      .eq('is_approved', true)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    const { data: members, error: memError } = await supabase
+      .from('community_members')
+      .select('community_id, user_id, users(name, photo)');
+
+    if (memError) throw memError;
+
+    const data = communities.map(c => ({
+      ...c,
+      community_members: members.filter(m => m.community_id === c.id)
+    }));
+
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET COMMUNITY STATS (STAFF)
+router.get("/stats/:userId", async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('communities')
+      .select('is_approved')
+      .eq('created_by', req.params.userId);
+
+    if (error) throw error;
+
+    const stats = {
+      total: data.length,
+      approved: data.filter(c => c.is_approved).length,
+      pending: data.filter(c => !c.is_approved).length,
+    };
+
+    res.json(stats);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ADMIN GET ALL
+router.get("/all", async (req, res) => {
+  try {
+    const { data: communities, error } = await supabase
+      .from('communities')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    const { data: members, error: memError } = await supabase
+      .from('community_members')
+      .select('community_id, user_id');
+
+    if (memError) throw memError;
+
+    const data = communities.map(c => ({
+      ...c,
+      community_members: members.filter(m => m.community_id === c.id)
+    }));
+
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET SINGLE COMMUNITY
+router.get("/:id", async (req, res) => {
+  try {
+    const { data: community, error } = await supabase
+      .from('communities')
+      .select('*')
+      .eq('id', req.params.id)
+      .single();
+
+    if (error) throw error;
+
+    const { data: members, error: memError } = await supabase
+      .from('community_members')
+      .select('community_id, user_id')
+      .eq('community_id', req.params.id);
+
+    if (memError) throw memError;
+
+    const data = {
+      ...community,
+      community_members: members
+    };
+
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// JOIN COMMUNITY
 router.post("/join/:id", async (req, res) => {
   try {
     const { userId } = req.body;
+    const { error } = await supabase
+      .from('community_members')
+      .upsert([{ community_id: req.params.id, user_id: userId }]);
 
-    const community = await Community.findById(req.params.id);
-
-    if (!community) {
-      return res.status(404).json({ message: "Community not found" });
-    }
-
-    // ✅ CLEAN DATA FIRST
-    community.members = community.members
-      .filter(m => m)
-      .map(m => m.toString());
-
-    // ✅ ADD ONLY IF NOT PRESENT
-    if (!community.members.includes(userId)) {
-      community.members.push(userId);
-    }
-
-    await community.save();
-
-    // ✅ RETURN CLEANED COMMUNITY
-    const updated = await Community.findById(req.params.id);
-
-    res.json({
-      message: "Joined successfully",
-      community: updated,
-    });
-
+    if (error) throw error;
+    res.json({ message: "Joined successfully" });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
-// ================= LEAVE COMMUNITY =================
+
+// LEAVE COMMUNITY
 router.post("/leave/:id", async (req, res) => {
   try {
     const { userId } = req.body;
+    const { error } = await supabase
+      .from('community_members')
+      .delete()
+      .eq('community_id', req.params.id)
+      .eq('user_id', userId);
 
-    const community = await Community.findById(req.params.id);
-
-    if (!community) {
-      return res.status(404).json({ message: "Community not found" });
-    }
-
-    community.members = community.members
-      .filter(m => m && m.toString() !== userId);
-
-    await community.save();
-
-    const updated = await Community.findById(req.params.id);
-
-    res.json({
-      message: "Left community",
-      community: updated,
-    });
-
+    if (error) throw error;
+    res.json({ message: "Left community" });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
-// ================= GET MEMBERS =================
+
+// GET MEMBERS
 router.get("/members/:id", async (req, res) => {
   try {
-    const community = await Community.findById(req.params.id)
-      .populate("members", "name email");
+    const { data, error } = await supabase
+      .from('community_members')
+      .select('user_id, users(name, email, photo)')
+      .eq('community_id', req.params.id);
 
-    if (!community) {
-      return res.status(404).json({ message: "Community not found" });
-    }
-
-    res.json(community.members);
-
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// ================= UPDATE COMMUNITY =================
-router.put("/update/:id", upload.single("image"), async (req, res) => {
-  try {
-    const community = await Community.findById(req.params.id);
-
-    if (!community) {
-      return res.status(404).json({ message: "Community not found" });
-    }
-
-    community.name = req.body.name;
-    community.description = req.body.description;
-    community.category = req.body.category;
-
-    if (req.file) {
-      community.image = `/uploads/${req.file.filename}`;
-    }
-
-    await community.save();
-
-    res.json({ message: "Community updated", community });
-
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// ================= DELETE COMMUNITY =================
-router.delete("/delete/:id", async (req, res) => {
-  try {
-    const community = await Community.findById(req.params.id);
-
-    if (!community) {
-      return res.status(404).json({ message: "Community not found" });
-    }
-
-    await Community.findByIdAndDelete(req.params.id);
-
-    res.json({ message: "Community deleted successfully" });
-
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// ================= GET STATS (STAFF DASHBOARD) =================
-router.get("/stats/:userId", async (req, res) => {
-  try {
-    const userId = req.params.userId;
-
-    const total = await Community.countDocuments({ createdBy: userId });
-
-    const approved = await Community.countDocuments({
-      createdBy: userId,
-      isApproved: true,
-    });
-
-    const pending = await Community.countDocuments({
-      createdBy: userId,
-      isApproved: false,
-    });
-
-    res.json({
-      total,
-      approved,
-      pending,
-    });
-
+    if (error) throw error;
+    res.json(data.map(m => m.users));
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

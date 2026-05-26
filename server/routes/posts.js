@@ -1,139 +1,148 @@
 const express = require("express");
 const router = express.Router();
-const Post = require("../models/Post");
+const supabase = require("../supabaseClient"); // ✅ Added Supabase
 const multer = require("multer");
-const mongoose = require("mongoose"); // ✅ MOVE HERE (TOP)
+const path = require("path");
 
-// STORAGE
 const storage = multer.diskStorage({
   destination: "uploads/",
   filename: (req, file, cb) => {
-    cb(null, Date.now() + "-" + file.originalname);
+    cb(null, Date.now() + path.extname(file.originalname));
   },
 });
-
 const upload = multer({ storage });
 
-
-// ================= CREATE POST =================
+// CREATE POST
 router.post("/create", upload.single("image"), async (req, res) => {
   try {
     const { communityId, userId, text } = req.body;
-
-    const post = new Post({
-      communityId: new mongoose.Types.ObjectId(communityId), // ✅ now safe
-      userId,
-      text,
-      image: req.file ? req.file.filename : null,
-    });
-
-    await post.save();
-    res.json(post);
-
-  } catch (err) {
-    console.error("CREATE ERROR:", err);
-    res.status(500).json({ error: err.message });
-  }
-});
-
-
-// ================= GET POSTS =================
-router.get("/:communityId", async (req, res) => {
-  try {
-    const posts = await Post.find({
-      communityId: new mongoose.Types.ObjectId(req.params.communityId),
-    }).sort({ createdAt: -1 });
-
-    res.json(posts);
-  } catch (err) {
-    console.error("GET ERROR:", err);
-    res.status(500).json({ error: err.message });
-  }
-});
-
-
-// ================= REACT =================
-router.post("/react/:postId", async (req, res) => {
-  try {
-    const { userId, emoji } = req.body;
-
-    const post = await Post.findById(req.params.postId);
-    if (!post.reactions || Object.keys(post.reactions).length === 0) {
-  post.reactions = {
-    "👍": [],
-    "❤️": [],
-    "😂": [],
-    "😮": [],
-    "😢": []
-  };
-}
-
-    if (!post) {
-      return res.status(404).json({ message: "Post not found" });
-    }
-
-    if (!post.reactions) post.reactions = {};
-
-    let alreadyReacted = false;
-
-    // 🔥 remove user from all emojis
-    Object.keys(post.reactions).forEach((key) => {
-      if (post.reactions[key].includes(userId)) {
-        if (key === emoji) {
-          alreadyReacted = true;
-        }
-        post.reactions[key] = post.reactions[key].filter(
-          (id) => id !== userId
-        );
+    
+    // Ensure user exists in users table to satisfy foreign key constraint
+    // (Staff members have IDs in 'staff' table, but need to be in 'users' for 'posts' table)
+    const { data: userExist } = await supabase.from('users').select('id').eq('id', userId).single();
+    
+    if (!userExist) {
+      const { data: staff } = await supabase.from('staff').select('*').eq('id', userId).single();
+      if (staff) {
+        await supabase.from('users').insert([{
+          id: staff.id,
+          name: staff.name,
+          email: staff.email,
+          role: 'admin',
+          password_hash: 'staff_no_login'
+        }]);
       }
-    });
-
-    // 👉 if NOT same emoji → add new
-    if (!alreadyReacted) {
-      if (!post.reactions[emoji]) post.reactions[emoji] = [];
-      post.reactions[emoji].push(userId);
     }
+    const { data, error } = await supabase
+      .from('posts')
+      .insert([{
+        community_id: communityId,
+        user_id: userId,
+        text,
+        image: req.file ? `/uploads/${req.file.filename}` : ""
+      }])
+      .select()
 
-    // ✅ 🔥 THIS IS THE MAIN FIX
-    post.markModified("reactions");
-
-    await post.save();
-
-    res.json(post);
+    if (error) {
+      console.error("Post Creation Error:", error);
+      throw error;
+    }
+    res.json({ message: "Post created", post: data[0] });
   } catch (err) {
-    console.error(err);
+    console.error("Server Post Error:", err);
     res.status(500).json({ error: err.message });
   }
 });
 
-// ================= UPDATE POST =================
+// GET POSTS FOR COMMUNITY
+router.get("/community/:id", async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('posts')
+      .select(`
+        *,
+        users(name, photo)
+      `)
+      .eq('community_id', req.params.id)
+      .order('created_at', { ascending: false })
+
+    if (error) throw error
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// LIKE/REACTION LOGIC
+router.post("/react/:id", async (req, res) => {
+  try {
+    const { emoji, userId } = req.body;
+    
+    // 1. Get current reactions
+    const { data: post, error: getError } = await supabase
+      .from('posts')
+      .select('reactions')
+      .eq('id', req.params.id)
+      .single()
+
+    if (getError) throw getError
+
+    let reactions = post.reactions || {};
+    
+    // Ensure emoji array exists
+    if (!reactions[emoji]) {
+      reactions[emoji] = [];
+    }
+
+    // Toggle reaction logic
+    if (reactions[emoji].includes(userId)) {
+      reactions[emoji] = reactions[emoji].filter(id => id !== userId);
+    } else {
+      reactions[emoji].push(userId);
+    }
+
+    // 2. Update in Supabase
+    const { error: updateError } = await supabase
+      .from('posts')
+      .update({ reactions })
+      .eq('id', req.params.id)
+
+    if (updateError) throw updateError
+    res.json({ reactions });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// DELETE POST
+router.delete("/delete/:id", async (req, res) => {
+  try {
+    const { error } = await supabase
+      .from('posts')
+      .delete()
+      .eq('id', req.params.id);
+
+    if (error) throw error;
+    res.json({ message: "Post deleted" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// UPDATE POST
 router.put("/update/:id", async (req, res) => {
   try {
     const { text } = req.body;
+    const { error } = await supabase
+      .from('posts')
+      .update({ text })
+      .eq('id', req.params.id);
 
-    const updatedPost = await Post.findByIdAndUpdate(
-      req.params.id,
-      { text },
-      { new: true }
-    );
-
-    res.json(updatedPost);
+    if (error) throw error;
+    res.json({ message: "Post updated" });
   } catch (err) {
-    console.error("UPDATE ERROR:", err);
     res.status(500).json({ error: err.message });
   }
 });
 
-
-// ================= DELETE POST =================
-router.delete("/delete/:id", async (req, res) => {
-  try {
-    await Post.findByIdAndDelete(req.params.id);
-
-    res.json({ message: "Post deleted successfully" });
-  } catch (err) {
-    console.error("DELETE ERROR:", err);
-    res.status(500).json({ error: err.message });
-  }
-});
 module.exports = router;

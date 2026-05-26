@@ -2,24 +2,31 @@ const express = require('express');
 const router = express.Router();
 const multer = require('multer');
 const path = require('path');
-const mongoose = require('mongoose');
+const supabase = require('../supabaseClient'); // ✅ Added Supabase
 const auth = require('../middleware/auth');
-const User = require('../models/User');
-const EmployerProfile = require('../models/EmployerProfile');
 
 // ✅ MULTER CONFIG
 const upload = multer({
   dest: path.join(__dirname, '..', 'uploads')
 });
 
-
 // ================= USER ROUTES =================
 
 // USER: get own profile
 router.get('/me', auth, async (req, res) => {
-  res.json({ user: req.user });
-});
+  try {
+    const { data: user, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', req.user.id)
+      .single()
 
+    if (error) throw error
+    res.json({ user });
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
 
 // ✅ UPDATED: USER PROFILE UPDATE (PHOTO + RESUME)
 router.post(
@@ -27,165 +34,98 @@ router.post(
   auth,
   upload.fields([
     { name: 'photo', maxCount: 1 },
-    { name: 'resume', maxCount: 1 }   // ⭐ ADD THIS
+    { name: 'resume', maxCount: 1 }
   ]),
   async (req, res) => {
     try {
       const { fullName, qualifications, experience } = req.body;
 
-      const user = await User.findById(req.user._id);
+      const updateData = {
+        full_name: fullName,
+        qualifications,
+        experience
+      };
 
-      if (!user) return res.status(404).json({ error: 'User not found' });
+      if (req.files.photo) updateData.photo = req.files.photo[0].filename;
+      if (req.files.resume) updateData.resume = req.files.resume[0].filename;
 
-      // ✅ TEXT FIELDS
-      user.profile.fullName = fullName || user.profile.fullName;
-      user.profile.qualifications = qualifications || user.profile.qualifications;
-      user.profile.experience = experience || user.profile.experience;
+      const { data, error } = await supabase
+        .from('users')
+        .update(updateData)
+        .eq('id', req.user.id)
+        .select()
+        .single()
 
-      // ✅ PHOTO
-      if (req.files?.photo) {
-        user.profile.photo = `/uploads/${req.files.photo[0].filename}`;
-      }
+      if (error) throw error
 
-      // ✅ RESUME (PDF)
-      if (req.files?.resume) {
-        user.profile.resume = `/uploads/${req.files.resume[0].filename}`;
-      }
-
-      await user.save();
-
-      const safe = user.toObject();
-      delete safe.passwordHash;
-
-      res.json({ user: safe });
-
+      res.json({ message: 'Profile updated', user: data });
     } catch (err) {
-      console.error("Error updating profile:", err);
+      console.error(err);
       res.status(500).json({ error: 'Server error' });
     }
   }
 );
 
-
 // ================= ADMIN ROUTES =================
 
-// ADMIN: get all users
+// ADMIN: Get all regular users
 router.get('/all', auth, async (req, res) => {
   try {
-    if (req.user.role !== "admin") {
-      return res.status(403).json({ error: "Access denied" });
-    }
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('role', 'user')
 
-    const users = await User.find({ role: "user" }).select("-passwordHash");
-
-    res.json({ users });
-
+    if (error) throw error
+    res.json(data);
   } catch (err) {
-    console.error("Error fetching users:", err);
-    res.status(500).json({ error: "Server error" });
+    res.status(500).json({ error: 'Server error' });
   }
 });
 
-
-// ADMIN: get employers
-router.get('/employers', auth, async (req, res) => {
+// ADMIN: Get all employers
+router.get('/all-employers', auth, async (req, res) => {
   try {
-    if (req.user.role !== "admin") {
-      return res.status(403).json({ error: "Access denied" });
-    }
+    // Joining users and employer_profiles
+    const { data, error } = await supabase
+      .from('users')
+      .select(`
+        *,
+        employer_profiles (*)
+      `)
+      .eq('role', 'employer')
 
-    const users = await User.find({ role: "employer" }).select("-passwordHash");
-
-    const employers = [];
-
-    for (let user of users) {
-      const profile = await EmployerProfile.findOne({ userId: user._id });
-
-      employers.push({
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        phone: user.phone || "-",
-        companyName: profile?.companyName || "Not Provided",
-        address: profile?.address || "",
-        yearsCompleted: profile?.yearsCompleted || ""
-      });
-    }
-
-    res.json({
-      employers,
-      total: employers.length
-    });
-
+    if (error) throw error
+    res.json(data);
   } catch (err) {
-    console.error("Error fetching employers:", err);
-    res.status(500).json({ error: "Server error" });
+    res.status(500).json({ error: 'Server error' });
   }
 });
 
-
-// ADMIN: view single user
-router.get('/view/:id', auth, async (req, res) => {
-  try {
-    if (req.user.role !== "admin") {
-      return res.status(403).json({ error: "Access denied" });
-    }
-
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-      return res.status(400).json({ error: "Invalid user ID" });
-    }
-
-    const user = await User.findById(req.params.id).select("-passwordHash");
-
-    if (!user) {
-      return res.status(404).json({ error: "User not found" });
-    }
-
-    res.json({ user });
-
-  } catch (err) {
-    console.error("Error in /view/:id:", err);
-    res.status(500).json({ error: "Server error" });
-  }
-});
-
-
-// ADMIN: delete user
+// ADMIN: Delete user
 router.delete('/delete/:id', auth, async (req, res) => {
   try {
-    if (req.user.role !== "admin") {
-      return res.status(403).json({ error: "Access denied" });
+    // Check if requester is admin
+    const { data: requester, error: requesterError } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', req.user.id)
+      .single()
+
+    if (requesterError || requester.role !== 'admin') {
+      return res.status(403).json({ error: 'Unauthorized: Admins only' });
     }
 
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-      return res.status(400).json({ error: "Invalid user ID" });
-    }
+    const { error } = await supabase
+      .from('users')
+      .delete()
+      .eq('id', req.params.id)
 
-    const deleted = await User.findByIdAndDelete(req.params.id);
-
-    if (!deleted) {
-      return res.status(404).json({ error: "User not found" });
-    }
-
-    res.json({ message: "User deleted" });
-
-  } catch (err) {
-    console.error("Error deleting user:", err);
-    res.status(500).json({ error: "Delete failed" });
-  }
-});
-
-router.get("/resume/:filename", (req, res) => {
-  try {
-    const filePath = path.join(__dirname, "..", "uploads", req.params.filename);
-
-    res.setHeader("Content-Type", "application/pdf");
-    res.setHeader("Content-Disposition", "inline");
-
-    res.sendFile(filePath);
+    if (error) throw error
+    res.json({ message: 'User deleted successfully' });
   } catch (err) {
     console.error(err);
-    res.status(500).send("Error opening resume");
+    res.status(500).json({ error: 'Server error' });
   }
 });
 

@@ -8,7 +8,7 @@ const navigate = useNavigate();
 const logout = () => {
 localStorage.removeItem("staff");
 sessionStorage.clear();
-navigate("/staff");
+navigate("/");
 };
 
 return ( <div className="staff-container">

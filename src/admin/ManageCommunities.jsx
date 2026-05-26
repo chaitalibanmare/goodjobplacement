@@ -20,11 +20,16 @@ export default function ManageCommunities() {
       const data = await res.json();
 
       if (res.ok) {
-        // oldest first → latest below
-        const sorted = data.sort(
-          (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
-        );
-        setCommunities(sorted);
+        if (Array.isArray(data)) {
+          // oldest first → latest below
+          const sorted = data.sort(
+            (a, b) => new Date(a.created_at) - new Date(b.created_at)
+          );
+          setCommunities(sorted);
+        } else {
+          console.error("Backend error:", data);
+          setCommunities([]);
+        }
       }
 
     } catch (err) {
@@ -36,7 +41,7 @@ export default function ManageCommunities() {
 
   async function toggleStatus(id) {
     try {
-      await fetch(`http://localhost:5000/api/community/approve/${id}`, {
+      await fetch(`http://localhost:5000/api/admin/community/${id}/toggle`, {
         method: "PUT",
       });
       fetchCommunities();
@@ -137,61 +142,61 @@ export default function ManageCommunities() {
 
                 currentCommunities.map((c) => (
 
-                  <tr key={c._id} style={{
-  background: "white",
-  boxShadow: "0 6px 20px rgba(0,0,0,0.08)"
-}}>
+                  <tr key={c.id} style={{
+                    background: "white",
+                    boxShadow: "0 6px 20px rgba(0,0,0,0.08)"
+                  }}>
 
-  <td style={{ padding: "10px 15px" }}>{c.name}</td>
+                    <td style={{ padding: "10px 15px" }}>{c.name}</td>
 
-  <td style={{
-    padding: "10px 15px",
-    maxWidth: "200px",
-    overflow: "hidden",
-    textOverflow: "ellipsis",
-    whiteSpace: "nowrap"
-  }}>
-    {c.description}
-  </td>
+                    <td style={{
+                      padding: "10px 15px",
+                      maxWidth: "200px",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap"
+                    }}>
+                      {c.description}
+                    </td>
 
-  <td style={{ padding: "10px 15px" }}>
-    {c.members?.length || 0}
-  </td>
+                    <td style={{ padding: "10px 15px" }}>
+                      {c.community_members?.length || 0}
+                    </td>
 
-  <td style={{ padding: "10px 15px" }}>
-    {c.createdAt
-      ? new Date(c.createdAt).toLocaleDateString()
-      : "N/A"}
-  </td>
+                    <td style={{ padding: "10px 15px" }}>
+                      {c.created_at
+                        ? new Date(c.created_at).toLocaleDateString()
+                        : "N/A"}
+                    </td>
 
-  <td style={{ padding: "10px 15px" }}>
-    <span style={{
-      background: c.isApproved ? "#dcfce7" : "#fef3c7",
-      color: c.isApproved ? "#166534" : "#92400e",
-      padding: "5px 10px",
-      borderRadius: "8px"
-    }}>
-      {c.isApproved ? "Approved" : "Pending"}
-    </span>
-  </td>
+                    <td style={{ padding: "10px 15px" }}>
+                      <span style={{
+                        background: c.is_approved ? "#dcfce7" : "#fef3c7",
+                        color: c.is_approved ? "#166534" : "#92400e",
+                        padding: "5px 10px",
+                        borderRadius: "8px"
+                      }}>
+                        {c.is_approved ? "Approved" : "Pending"}
+                      </span>
+                    </td>
 
-  <td style={{ padding: "10px 15px" }}>
-    <button
-      onClick={() => toggleStatus(c._id)}
-      style={{
-        background: c.isApproved ? "#ef4444" : "#10b981",
-        color: "white",
-        border: "none",
-        padding: "6px 14px",
-        borderRadius: "6px",
-        cursor: "pointer"
-      }}
-    >
-      {c.isApproved ? "Disable" : "Enable"}
-    </button>
-  </td>
+                    <td style={{ padding: "10px 15px" }}>
+                      <button
+                        onClick={() => toggleStatus(c.id)}
+                        style={{
+                          background: c.is_approved ? "#ef4444" : "#10b981",
+                          color: "white",
+                          border: "none",
+                          padding: "6px 14px",
+                          borderRadius: "6px",
+                          cursor: "pointer"
+                        }}
+                      >
+                        {c.is_approved ? "Disable" : "Enable"}
+                      </button>
+                    </td>
 
-</tr>
+                  </tr>
 
                 ))
 

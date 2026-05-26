@@ -43,7 +43,7 @@ export default function MyCourses() {
         {courses
           .filter(course => course !== null)
           .map(course => (
-            <div key={course._id} className="card">
+            <div key={course.id} className="card">
 
               <img
                 src={`http://localhost:5000/uploads/${course.image}`}
