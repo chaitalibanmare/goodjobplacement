@@ -383,9 +383,9 @@ function AuthModal({ initialType, onClose, setUser }) {
                 required
                 style={{ width: '100%', paddingRight: '40px' }}
               />
-              <button 
-                type="button" 
-                onClick={() => setShowLoginPass(!showLoginPass)} 
+              <button
+                type="button"
+                onClick={() => setShowLoginPass(!showLoginPass)}
                 style={{ position: 'absolute', right: '10px', background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: '#666', display: 'flex' }}
                 tabIndex="-1"
               >
@@ -467,9 +467,9 @@ function AuthModal({ initialType, onClose, setUser }) {
                 className={errors.password ? "input-error" : ""}
                 style={{ width: '100%', paddingRight: '40px' }}
               />
-              <button 
-                type="button" 
-                onClick={() => setShowRegPass(!showRegPass)} 
+              <button
+                type="button"
+                onClick={() => setShowRegPass(!showRegPass)}
                 style={{ position: 'absolute', right: '10px', background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: '#666', display: 'flex' }}
                 tabIndex="-1"
               >
@@ -495,9 +495,9 @@ function AuthModal({ initialType, onClose, setUser }) {
                 className={errors.confirm ? "input-error" : ""}
                 style={{ width: '100%', paddingRight: '40px' }}
               />
-              <button 
-                type="button" 
-                onClick={() => setShowRegConfirm(!showRegConfirm)} 
+              <button
+                type="button"
+                onClick={() => setShowRegConfirm(!showRegConfirm)}
                 style={{ position: 'absolute', right: '10px', background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: '#666', display: 'flex' }}
                 tabIndex="-1"
               >
@@ -538,7 +538,7 @@ function AuthModal({ initialType, onClose, setUser }) {
 export default function App() {
   const [loginType, setLoginType] = useState(null)
   const [settingsOpen, setSettingsOpen] = useState(false)
-  const [theme, setTheme] = useState(() => localStorage.getItem('gjp_theme') || 'dark')
+  const [theme, setTheme] = useState(() => localStorage.getItem('gjp_theme') || 'light')
   const [fontSize, setFontSize] = useState(() => localStorage.getItem('gjp_fontSize') || 'medium')
   const [user, setUser] = useState(() => {
     try { return JSON.parse(localStorage.getItem('gjp_user') || 'null') } catch (e) { return null }
