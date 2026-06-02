@@ -28,6 +28,7 @@ import StaffVacancies from './staff/StaffVacancies'
 import StaffCourses from './staff/Courses'
 import AddCourse from './staff/AddCourse'
 import ViewCourses from './staff/ViewCourses'
+import StaffPlacement from './staff/StaffPlacement'
 import ManageCourses from './admin/ManageCourses'
 import Payment from './pages/Payment'
 import MyCourses from './pages/MyCourses'
@@ -810,6 +811,7 @@ export default function App() {
           <Route path="/staff/*" element={<StaffLayout />}>
             <Route path="dashboard" element={<StaffDashboard />} />
             <Route path="vacancies" element={<StaffVacancies />} />
+            <Route path="placement" element={<StaffPlacement />} />
             <Route path="courses" element={<StaffCourses />} />
             <Route path="courses/add" element={<AddCourse />} />
             <Route path="courses/view" element={<ViewCourses />} />

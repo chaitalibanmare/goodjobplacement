@@ -84,4 +84,20 @@ router.get("/all", async (req, res) => {
   }
 });
 
+// 👉 GET ALL STUDENTS
+router.get("/students", async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('role', 'user');
+
+    if (error) throw error;
+    res.json(data);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Error fetching students" });
+  }
+});
+
 module.exports = router;

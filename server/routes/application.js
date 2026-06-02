@@ -145,15 +145,59 @@ router.get('/user/:userId', async (req, res) => {
 router.patch('/status/:id', async (req, res) => {
   try {
     const { status } = req.body
-    const { data, error } = await supabase
+
+    // 1. Get the current application details before update
+    const { data: oldApp, error: getError } = await supabase
+      .from('applications')
+      .select('*')
+      .eq('id', req.params.id)
+      .single()
+
+    if (getError || !oldApp) {
+      return res.status(404).json({ error: 'Application not found' })
+    }
+
+    const oldStatus = oldApp.status
+
+    // 2. Update status in applications table
+    const { data: updatedApp, error: updateError } = await supabase
       .from('applications')
       .update({ status })
       .eq('id', req.params.id)
       .select()
 
-    if (error) throw error
+    if (updateError) throw updateError
 
-    res.json({ message: 'Status updated', data })
+    // 3. Keep placements table synchronized with hired status
+    if (status === 'hired' && oldStatus !== 'hired') {
+      // Add placement record
+      const { error: placementError } = await supabase
+        .from('placements')
+        .insert([
+          {
+            user_id: oldApp.user_id,
+            company_name: oldApp.company,
+            job_role: oldApp.position,
+            placement_date: new Date().toISOString().split('T')[0]
+          }
+        ])
+      if (placementError) {
+        console.error("Error creating placement record:", placementError.message)
+      }
+    } else if (status !== 'hired' && oldStatus === 'hired') {
+      // Remove placement record
+      const { error: removeError } = await supabase
+        .from('placements')
+        .delete()
+        .eq('user_id', oldApp.user_id)
+        .eq('company_name', oldApp.company)
+        .eq('job_role', oldApp.position)
+      if (removeError) {
+        console.error("Error removing placement record:", removeError.message)
+      }
+    }
+
+    res.json({ message: 'Status updated', data: updatedApp })
   } catch (err) {
     console.error(err)
     res.status(500).json({ error: 'Server error' })

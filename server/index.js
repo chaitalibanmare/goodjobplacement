@@ -37,6 +37,7 @@ const adminRoutes = require('./routes/admin')
 const communityRoutes = require("./routes/community");
 const postRoutes = require("./routes/posts");
 const paymentRoutes = require('./routes/payment');
+const placementRoutes = require('./routes/placement');
 
 // ✅ Ensure uploads folder exists
 const UPLOAD_DIR = path.join(__dirname, 'uploads')
@@ -74,6 +75,7 @@ app.use('/api/admin', adminRoutes)
 app.use("/api/community", communityRoutes);
 app.use("/api/posts", postRoutes);
 app.use('/api/payment', paymentRoutes);
+app.use('/api/placement', placementRoutes);
 
 // ✅ MongoDB Connection (Keeping this for now so your old routes still work)
 const MONGO = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/goodplacementjob'

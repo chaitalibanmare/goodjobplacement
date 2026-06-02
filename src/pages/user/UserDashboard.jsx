@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import "./userDashboard.css";
 
@@ -6,6 +6,55 @@ export default function UserDashboard() {
   const navigate = useNavigate();
   const location = useLocation();
   const user = JSON.parse(localStorage.getItem("gjp_user"));
+
+  const [enrolledCourses, setEnrolledCourses] = useState([]);
+  const [stats, setStats] = useState({ applied: 0, interviews: 0, offers: 0 });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const token = localStorage.getItem("gjp_token");
+    if (!token || !user?.id) {
+      setLoading(false);
+      return;
+    }
+
+    const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:5000";
+
+    const fetchDashboardData = async () => {
+      try {
+        // Fetch courses
+        const coursesRes = await fetch(`${baseUrl}/api/courses/my-courses`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (coursesRes.ok) {
+          const coursesData = await coursesRes.json();
+          if (Array.isArray(coursesData)) {
+            setEnrolledCourses(coursesData);
+          }
+        }
+
+        // Fetch applications
+        const appsRes = await fetch(`${baseUrl}/api/application/user/${user.id}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (appsRes.ok) {
+          const appsData = await appsRes.json();
+          if (Array.isArray(appsData)) {
+            const applied = appsData.length;
+            const interviews = appsData.filter(a => a.status === "shortlisted").length;
+            const offers = appsData.filter(a => a.status === "hired").length;
+            setStats({ applied, interviews, offers });
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching dashboard data:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, [user?.id]);
 
   return (
     <main className="user-dashboard">
@@ -87,16 +136,29 @@ export default function UserDashboard() {
               </svg>
             </div>
             <h4>My Courses</h4>
-            <p className="desc">Resume your "Full-Stack System Design" course where you left off.</p>
-            <div className="progress-container">
-              <div className="progress-bar">
-                <div className="progress-fill" style={{ width: "65%" }}></div>
-              </div>
-              <span className="progress-text">65% Completed</span>
-            </div>
-            <button className="btn-outline btn-full" onClick={() => navigate("/my-courses")}>
-              Continue
-            </button>
+            {loading ? (
+              <p className="desc">Loading course details...</p>
+            ) : enrolledCourses.length > 0 ? (
+              <>
+                <p className="desc">Resume your "{enrolledCourses[0].name}" course where you left off.</p>
+                <div className="progress-container">
+                  <div className="progress-bar">
+                    <div className="progress-fill" style={{ width: `${enrolledCourses[0].progress || 0}%` }}></div>
+                  </div>
+                  <span className="progress-text">{enrolledCourses[0].progress || 0}% Completed</span>
+                </div>
+                <button className="btn-outline btn-full" onClick={() => navigate("/my-courses")}>
+                  Continue
+                </button>
+              </>
+            ) : (
+              <>
+                <p className="desc" style={{ marginBottom: "auto" }}>You haven't enrolled in any courses yet. Explore our library to start learning.</p>
+                <button className="btn-outline btn-full" style={{ marginTop: "16px" }} onClick={() => navigate("/courses")}>
+                  Explore Library
+                </button>
+              </>
+            )}
           </div>
 
           {/* COMMUNITY */}
@@ -135,15 +197,15 @@ export default function UserDashboard() {
             <h4>Placement Activity</h4>
             <div className="stats-grid">
               <div className="stat-box">
-                <div className="stat-value">14</div>
+                <div className="stat-value">{loading ? "..." : stats.applied}</div>
                 <div className="stat-label">Applied</div>
               </div>
               <div className="stat-box">
-                <div className="stat-value">3</div>
+                <div className="stat-value">{loading ? "..." : stats.interviews}</div>
                 <div className="stat-label">Interviews</div>
               </div>
               <div className="stat-box">
-                <div className="stat-value">1</div>
+                <div className="stat-value">{loading ? "..." : stats.offers}</div>
                 <div className="stat-label">Offers</div>
               </div>
             </div>
